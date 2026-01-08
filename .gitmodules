@@ -1,0 +1,6 @@
+[submodule "MayoranaFramework"]
+	path = MayoranaFramework
+	url = git@github.com:lufi2544/MayoranaFramework.git
+[submodule "source/MayoranaFramework"]
+	path = source/MayoranaFramework
+	url = git@github.com:lufi2544/MayoranaFramework.git
