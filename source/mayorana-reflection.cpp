@@ -45,12 +45,7 @@ int main(int arg_num, char** args)
 				printf("%d: %.*s\n", this_token.token_type, this_token.text_len, this_token.text);
 				
 			}break;
-		}
-		
-		if (this_token.token_type != Token_Identifier && this_token.token_type != Token_String)
-		{
-			this_tokenizer.at++;
-		}
+		}	
 	}
 	
 	

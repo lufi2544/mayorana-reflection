@@ -154,7 +154,10 @@ get_token(tokenizer *_tokenizer)
 	result.text_len = 1;
 	result.text = _tokenizer->at;
 	
-	switch(_tokenizer->at[0])
+	char C = _tokenizer->at[0];
+	++_tokenizer->at;
+	
+	switch(C)
 	{
 		case '\0':{ result.token_type = Token_EndOfStream; }break;
 		case '(':{ result.token_type = Token_OpenParam; }break;
@@ -170,7 +173,6 @@ get_token(tokenizer *_tokenizer)
 		
 		case '"':
 		{
-			++_tokenizer->at;
 			result.text = _tokenizer->at;
 			while(_tokenizer->at[0] && _tokenizer->at[0] != '"')
 			{
@@ -194,14 +196,14 @@ get_token(tokenizer *_tokenizer)
 		
 		default:
 		{
-			if(is_alpha(_tokenizer->at[0]))
+			if(is_alpha(C))
 			{
 				parse_identifier(_tokenizer);
 				result.token_type = Token_Identifier;
 				result.text_len = _tokenizer->at - result.text;
 			}
 #if 0
-			else if(is_numeric(_tokenizer->at[0]))
+			else if(is_numeric(C))
 			{
 				parse_number();
 			}
@@ -214,6 +216,7 @@ get_token(tokenizer *_tokenizer)
 		}
 		
 	}
+	
 			
 	return result;
 }
