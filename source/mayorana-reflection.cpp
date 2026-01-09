@@ -17,6 +17,12 @@ int main(int arg_num, char** args)
 	tokenizer this_tokenizer = {};
 	this_tokenizer.at = (char*)file_buffer.data;
 	
+	if(file_buffer.size == 0)
+	{
+		printf("Failed to load the file \n");
+		return 1;
+	}
+	
 	bool parsing = true;
 	while(parsing)
 	{
@@ -39,6 +45,11 @@ int main(int arg_num, char** args)
 				printf("%d: %.*s\n", this_token.token_type, this_token.text_len, this_token.text);
 				
 			}break;
+		}
+		
+		if (this_token.token_type != Token_Identifier && this_token.token_type != Token_String)
+		{
+			this_tokenizer.at++;
 		}
 	}
 	

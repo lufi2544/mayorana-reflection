@@ -85,7 +85,7 @@ internal_f void
 parse_c_style_comment(tokenizer *_tokenizer)
 {
 	_tokenizer->at += 2;
-	while(!is_end_of_line(_tokenizer->at[0]))
+	while(_tokenizer->at[0] && !is_end_of_line(_tokenizer->at[0]))
 	{
 		_tokenizer->at++;
 	}
@@ -95,7 +95,7 @@ internal_f void
 parse_cpp_style_comment(tokenizer *_tokenizer)
 {
 	_tokenizer->at += 2;
-	while((_tokenizer->at[0] && !(_tokenizer->at[0] == '*') && (_tokenizer->at[1] == '/')))
+	while((_tokenizer->at[0] && !((_tokenizer->at[0] == '*') && (_tokenizer->at[1] == '/'))))
 	{
 		_tokenizer->at++;
 	}
@@ -114,7 +114,7 @@ eat_whitespaces(tokenizer *_tokenizer)
 	{		
 		if(is_white_space(_tokenizer->at[0]))
 		{
-			++_tokenizer->at[0];
+			++_tokenizer->at;
 		}
 		else if((_tokenizer->at[0] == '/') && (_tokenizer->at[1] == '/'))
 		{		
@@ -134,15 +134,22 @@ eat_whitespaces(tokenizer *_tokenizer)
 }
 
 internal_f void
-parse_identifier()
+parse_identifier(tokenizer *_tokenizer)
 {
-	
+	while(is_alpha(_tokenizer->at[0]) ||
+		  is_numeric(_tokenizer->at[0]) ||
+		  _tokenizer->at[0] == '_')
+	{
+		_tokenizer->at++;
+	}
 }
 
 
 internal_f token
 get_token(tokenizer *_tokenizer)
 {
+	eat_whitespaces(_tokenizer);
+	
 	token result;
 	result.text_len = 1;
 	result.text = _tokenizer->at;
@@ -189,7 +196,9 @@ get_token(tokenizer *_tokenizer)
 		{
 			if(is_alpha(_tokenizer->at[0]))
 			{
-				parse_identifier();
+				parse_identifier(_tokenizer);
+				result.token_type = Token_Identifier;
+				result.text_len = _tokenizer->at - result.text;
 			}
 #if 0
 			else if(is_numeric(_tokenizer->at[0]))
@@ -205,6 +214,6 @@ get_token(tokenizer *_tokenizer)
 		}
 		
 	}
-	
+			
 	return result;
 }
