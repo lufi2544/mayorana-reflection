@@ -18,7 +18,7 @@ enum enum_token_type
 {
 	Token_Unknown,
 	
-	Token_OpenParam,
+	Token_OpenParen,
 	Token_Colon,
 	Token_CloseParen,
 	Token_Semicolon,
@@ -36,7 +36,7 @@ enum enum_token_type
 
 struct token
 {
-	enum_token_type token_type;
+	enum_token_type type;
 	u32 text_len;
 	char *text;
 };
@@ -55,6 +55,147 @@ is_white_space(char c)
 				   (c == '\r'));
 	
 	return result;
+}
+
+
+// In this case the match has the \0 operator at the end, but not the _token->text data, since it is a buffer with a lenght based on a bigger text buffer.
+global_f bool
+token_equals(token _token, char *match)
+{	
+	char* at = match;
+	for(u32 idx = 0;
+		idx < _token.text_len;
+		++idx, ++at)
+	{
+		if((*at == 0) ||
+		   (_token.text[idx] != *at))
+		{
+			return false;
+		}
+	}
+	
+	bool result = (*at == 0);	
+	return result;	
+}
+
+
+global_f bool
+token_is_reflected(token _token)
+{
+	bool result = token_equals(_token, "MY_CLASS")
+		|| token_equals(_token, "MY_STRUCT")
+		|| token_equals(_token, "MY_ENUM");
+	
+	return result;
+}
+
+
+global_f token
+get_token(tokenizer *_tokenizer);
+
+internal_f bool
+require_token(tokenizer *_tokenizer, enum_token_type _type)
+{
+	token this_token = get_token(_tokenizer);
+	bool result = this_token.type == _type;
+	
+	return result;
+}
+
+
+internal_f void
+parse_reflection_params(tokenizer *_tokenizer)
+{
+	for(;;)
+	{
+		// TODO Nothing for now here in the params
+		token this_token = get_token(_tokenizer);
+		if((this_token.type == Token_CloseParen)
+		   || (this_token.type == Token_EndOfStream))
+		{
+			break;
+		}
+	}
+}
+
+
+internal_f void
+parse_member(tokenizer *_tokenizer, token _member_type_token)
+{
+	bool is_pointer = false;
+	bool parsing = true;
+	while(parsing)
+	{
+		token this_token = get_token(_tokenizer);
+		switch(this_token.type)
+		{
+			
+			case Token_Asterisk:
+			{
+				is_pointer = true;
+				
+			}break;
+			case Token_Identifier:
+			{
+				printf("DEBUG_VALUE(%.*s);\n", this_token.text_len, this_token.text);
+			}break;
+			case Token_Semicolon:
+			case Token_EndOfStream:
+			{
+				parsing = false;
+			}break;
+			
+		}
+	}
+}
+
+internal_f void
+parse_struct(tokenizer *_tokenizer)
+{
+	token name_token = get_token(_tokenizer);
+	if(require_token(_tokenizer, Token_OpenBraces))
+	{
+		for(;;)
+		{
+			token member_token = get_token(_tokenizer);
+			if(member_token.type == Token_CloseBraces)
+			{
+				break;
+			}
+			else
+			{
+				// current struct parsing
+				parse_member(_tokenizer, member_token);
+			}
+		}
+	}
+}
+
+
+/**
+ * This is the reflection params and reflection identifier part.
+*/
+global_f void
+parse_reflected(tokenizer *_tokenizer)
+{
+	if(require_token(_tokenizer, Token_OpenParen))
+	{
+		parse_reflection_params(_tokenizer);
+		token type_token = get_token(_tokenizer);
+		if(token_equals(type_token, "struct"))
+		{
+			parse_struct(_tokenizer);
+			
+		}else
+		{			
+			fprintf(stderr, "ERROR: Reflection is only supported for struct.");
+		}
+		
+	}
+	else
+	{
+		fprintf(stderr, "ERROR: Missing parenthesis after the reflection identifier.");
+	}
 }
 
 inline bool
@@ -145,7 +286,7 @@ parse_identifier(tokenizer *_tokenizer)
 }
 
 
-internal_f token
+global_f token
 get_token(tokenizer *_tokenizer)
 {
 	eat_whitespaces(_tokenizer);
@@ -159,16 +300,16 @@ get_token(tokenizer *_tokenizer)
 	
 	switch(C)
 	{
-		case '\0':{ result.token_type = Token_EndOfStream; }break;
-		case '(':{ result.token_type = Token_OpenParam; }break;
-		case ')':{ result.token_type = Token_CloseParen; }break;
-		case '{':{ result.token_type = Token_OpenBraces; }break;
-		case '}':{ result.token_type = Token_CloseBraces; }break;
-		case '[':{ result.token_type = Token_OpenBracket; }break;
-		case ']':{ result.token_type = Token_CloseBracket; }break;
-		case '*':{ result.token_type = Token_Asterisk; }break;
-		case ':':{ result.token_type = Token_Colon; }break;
-		case ';':{ result.token_type = Token_Semicolon; }break;
+		case '\0':{ result.type = Token_EndOfStream; }break;
+		case '(':{ result.type = Token_OpenParen; }break;
+		case ')':{ result.type = Token_CloseParen; }break;
+		case '{':{ result.type = Token_OpenBraces; }break;
+		case '}':{ result.type = Token_CloseBraces; }break;
+		case '[':{ result.type = Token_OpenBracket; }break;
+		case ']':{ result.type = Token_CloseBracket; }break;
+		case '*':{ result.type = Token_Asterisk; }break;
+		case ':':{ result.type = Token_Colon; }break;
+		case ';':{ result.type = Token_Semicolon; }break;
 		
 		
 		case '"':
@@ -183,7 +324,7 @@ get_token(tokenizer *_tokenizer)
 				++_tokenizer->at;
 			}
 			
-			result.token_type = Token_String;
+			result.type = Token_String;
 			result.text_len = _tokenizer->at - result.text;
 			
 			if(_tokenizer->at[0] == '"')
@@ -199,7 +340,7 @@ get_token(tokenizer *_tokenizer)
 			if(is_alpha(C))
 			{
 				parse_identifier(_tokenizer);
-				result.token_type = Token_Identifier;
+				result.type = Token_Identifier;
 				result.text_len = _tokenizer->at - result.text;
 			}
 #if 0
@@ -210,7 +351,7 @@ get_token(tokenizer *_tokenizer)
 #endif
 			else
 			{
-				result.token_type = Token_Unknown;
+				result.type = Token_Unknown;
 			}
 			break;
 		}

@@ -27,7 +27,7 @@ int main(int arg_num, char** args)
 	while(parsing)
 	{
 		token this_token = get_token(&this_tokenizer);
-		switch(this_token.token_type)
+		switch(this_token.type)
 		{
 			case Token_EndOfStream:
 			{
@@ -40,9 +40,17 @@ int main(int arg_num, char** args)
 				// not printing for now.
 			}break;
 			
+			case Token_Identifier:
+			{
+				if(token_is_reflected(this_token))
+				{
+					parse_reflected(&this_tokenizer);
+				}
+			}break;
+			
 			default:
 			{
-				printf("%d: %.*s\n", this_token.token_type, this_token.text_len, this_token.text);
+//				printf("%d: %.*s\n", this_token.type, this_token.text_len, this_token.text);
 				
 			}break;
 		}	
