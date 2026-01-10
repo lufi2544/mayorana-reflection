@@ -1,0 +1,7 @@
+
+////// MY REFLECTION /////
+
+Parsing properties:
+- Just reflect the properties with MY_PROPERTY() identifier.
+- Should we reflect constexpr, const or static members?
+

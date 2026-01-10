@@ -119,6 +119,30 @@ parse_reflection_params(tokenizer *_tokenizer)
 }
 
 
+internal_f void 
+parsing_move_to(tokenizer *_tokenizer, enum_token_type target_token)
+{
+	bool moving = true;	
+	while((_tokenizer->at != 0) && (moving))
+	{
+		token this_token = get_token(_tokenizer);
+		if(this_token.type == target_token)
+		{
+			moving = false;
+			break;
+		}
+	}
+	
+	
+	if(moving)
+	{
+		fprintf(stderr, "ERROR: tried to go to %d token type but failed", target_token);
+	}	
+}
+
+/**
+* We don't support static const reflection, since I think it does not make sense for now? I have to investigate.
+*/
 internal_f void
 parse_member(tokenizer *_tokenizer, token _member_type_token)
 {
@@ -127,28 +151,40 @@ parse_member(tokenizer *_tokenizer, token _member_type_token)
 	while(parsing)
 	{
 		token this_token = get_token(_tokenizer);
+		if((token_equals(this_token, "static")) ||
+		   (token_equals(this_token, "const")) || 
+		   (token_equals(this_token, "constexpr")))
+		{
+			// baiscally if we encounter one of this identifers, we just return sice we are not parsing: "static", "consts" or "constexpr"
+			parsing = false;
+			parsing_move_to(_tokenizer, Token_Semicolon);			
+			break;
+		}
 		switch(this_token.type)
 		{
 			
 			case Token_Asterisk:
 			{
-				is_pointer = true;
-				
+				is_pointer = true;				
 			}break;
+			
 			case Token_Identifier:
 			{
 				printf("DEBUG_VALUE(%.*s);\n", this_token.text_len, this_token.text);
+				
 			}break;
 			case Token_Semicolon:
 			case Token_EndOfStream:
 			{
 				parsing = false;
+				
 			}break;
 			
 		}
 	}
 }
 
+// TODO: in the future we will set this to be serializable only the MY_PROPERTY() fields
 internal_f void
 parse_struct(tokenizer *_tokenizer)
 {
@@ -157,15 +193,15 @@ parse_struct(tokenizer *_tokenizer)
 	{
 		for(;;)
 		{
-			token member_token = get_token(_tokenizer);
-			if(member_token.type == Token_CloseBraces)
+			token member_type_token = get_token(_tokenizer);
+			if(member_type_token.type == Token_CloseBraces)
 			{
 				break;
 			}
 			else
 			{
-				// current struct parsing
-				parse_member(_tokenizer, member_token);
+				// current struct member parsin with the member type
+				parse_member(_tokenizer, member_type_token);
 			}
 		}
 	}
