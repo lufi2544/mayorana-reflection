@@ -14,6 +14,31 @@
 #define MY_ENUM(params)
 
 
+
+// TODO: for now lets add this by hand, but reflection should generate the code for the different types in a file, so then the code can use it.
+enum enum_meta_type
+{
+	MetaType_u8,
+	MetaType_u16,
+	MetaType_u32,
+	MetaType_u64,
+	MetaType_s8,
+	MetaType_s16,
+	MetaType_s32,
+	MetaType_s64,
+	MetaType_f32,
+	MetaType_f64,	
+};
+
+// TODO: this I think must be inside the project itself, so hm... I have to think about it.
+struct member_definition
+{
+	enum_meta_type type;
+	char* name;
+	u32 offset;
+};
+
+
 enum enum_token_type
 {
 	Token_Unknown,
@@ -144,13 +169,14 @@ parsing_move_to(tokenizer *_tokenizer, enum_token_type target_token)
 * We don't support static const reflection, since I think it does not make sense for now? I have to investigate.
 */
 internal_f void
-parse_member(tokenizer *_tokenizer, token _member_type_token)
+parse_member(tokenizer *_tokenizer, token _struct_token, token _member_type_token)
 {
 	bool is_pointer = false;
 	bool parsing = true;
 	while(parsing)
 	{
 		token this_token = get_token(_tokenizer);
+		
 		if((token_equals(this_token, "static")) ||
 		   (token_equals(this_token, "const")) || 
 		   (token_equals(this_token, "constexpr")))
@@ -160,19 +186,26 @@ parse_member(tokenizer *_tokenizer, token _member_type_token)
 			parsing_move_to(_tokenizer, Token_Semicolon);			
 			break;
 		}
+		
 		switch(this_token.type)
 		{
 			
 			case Token_Asterisk:
 			{
 				is_pointer = true;				
+				
 			}break;
 			
 			case Token_Identifier:
 			{
-				printf("DEBUG_VALUE(%.*s);\n", this_token.text_len, this_token.text);
+				printf("{MetaType_%.*s, \"%.*s\", (u32)&((%.*s *)0)->%.*s}, \n",
+					   _member_type_token.text_len, _member_type_token.text,
+					   this_token.text_len, this_token.text, 
+					   _struct_token.text_len, _struct_token.text, 
+					    this_token.text_len, this_token.text);
 				
 			}break;
+			
 			case Token_Semicolon:
 			case Token_EndOfStream:
 			{
@@ -188,12 +221,16 @@ parse_member(tokenizer *_tokenizer, token _member_type_token)
 internal_f void
 parse_struct(tokenizer *_tokenizer)
 {
-	token name_token = get_token(_tokenizer);
+	token struct_type_token = get_token(_tokenizer);
+	
 	if(require_token(_tokenizer, Token_OpenBraces))
 	{
+		printf("member_definition *members_of_%.*s[] = \n", struct_type_token.text_len, struct_type_token.text);
+		printf("{\n");
 		for(;;)
 		{
 			token member_type_token = get_token(_tokenizer);
+			
 			if(member_type_token.type == Token_CloseBraces)
 			{
 				break;
@@ -201,9 +238,11 @@ parse_struct(tokenizer *_tokenizer)
 			else
 			{
 				// current struct member parsin with the member type
-				parse_member(_tokenizer, member_type_token);
+				parse_member(_tokenizer, struct_type_token, member_type_token);
 			}
 		}
+		
+		printf("};\n");
 	}
 }
 

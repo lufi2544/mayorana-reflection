@@ -1,6 +1,7 @@
 
 
 // MAYORANA
+#define MAYORANA_DISABLE_LOGS
 #include "mayorana.h"
 
 // Reflection project files

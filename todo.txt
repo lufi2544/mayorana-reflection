@@ -5,3 +5,6 @@ Parsing properties:
 - Just reflect the properties with MY_PROPERTY() identifier.
 - Should we reflect constexpr, const or static members?
 
+After implementation:
+- add the types to reflect dynamically, so I don't have to add them by hand every time.
+- then validation for the types to make sense, and to check if the type is reflected and all that.

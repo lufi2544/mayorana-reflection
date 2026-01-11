@@ -10,6 +10,8 @@ set CFLAGS=/std:c17 /Zi
 set MAIN_FILE=%SRC_DIR%/mayorana-reflection.cpp
 set MAYORANA_DIR=%SRC_DIR%/MayoranaFramework/source
 set FLAGS=MAYORANA
+set BINARY_NAME=mayorana-reflection
+
 if not exist %BIN_DIR% mkdir %BIN_DIR%
 
 cd %BIN_DIR%
@@ -21,6 +23,9 @@ call "../setup_cl_x64.bat"
 
 :: Compile with MSVC
 :: Using Fe: in stead of OUT, since we are using unity build.
-cl /Fe:mayorana-reflection %CFLAGS% -I%SRC_DIR% -I%TESTS_DIR% -I%MAYORANA_DIR% %MAIN_FILE% -D%FLAGS% /link /SUBSYSTEM:CONSOLE /nologo
+cl /Fe:%BINARY_NAME% %CFLAGS% -I%SRC_DIR% -I%TESTS_DIR% -I%MAYORANA_DIR% %MAIN_FILE% -D%FLAGS% /link /SUBSYSTEM:CONSOLE /nologo
+
+:: print the generated code to a file( we can do this more elegantly with the game files, but is fine ).
+%BINARY_NAME% > game_generated.h
 
 
