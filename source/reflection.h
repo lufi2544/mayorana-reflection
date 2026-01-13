@@ -1,5 +1,6 @@
 /* date = January 8th 2026 7:19 pm */
 
+#include "reflection_includes.h"
 
 //////////////////////
 /*
@@ -7,36 +8,6 @@
  * generated metadata for different pruposes.
 */
 //////////////////////
-
-
-#define MY_CLASS(params)
-#define MY_STRUCT(params)
-#define MY_ENUM(params)
-
-
-
-// TODO: for now lets add this by hand, but reflection should generate the code for the different types in a file, so then the code can use it.
-enum enum_meta_type
-{
-	MetaType_u8,
-	MetaType_u16,
-	MetaType_u32,
-	MetaType_u64,
-	MetaType_s8,
-	MetaType_s16,
-	MetaType_s32,
-	MetaType_s64,
-	MetaType_f32,
-	MetaType_f64,	
-};
-
-// TODO: this I think must be inside the project itself, so hm... I have to think about it.
-struct member_definition
-{
-	enum_meta_type type;
-	char* name;
-	u32 offset;
-};
 
 
 enum enum_token_type
@@ -82,6 +53,59 @@ is_white_space(char c)
 	return result;
 }
 
+/** TODO: This needs to be in the project itself.
+
+global_f void
+print_struct(u32 _member_count, member_definition *_struct_definition, void *struct_ptr)
+{
+	for(u32 member_idx = 0;
+		member_idx < _member_count;
+		++member_idx)
+	{
+		member_definition *member = _struct_definition + member_idx;
+		char text_buffer[256];
+		text_buffer[0] = 0;
+		swtict(member->type)
+		{
+			case Metatype_u32:
+			{
+				
+			}break;
+			
+			case MetaType_bool:
+			{
+				
+			}break;
+			
+			case MetaType_bool:
+			{
+				
+			}break;
+			case MetaType_bool:
+			{
+				
+			}break;
+			case MetaType_bool:
+			{
+				
+			}break;
+			case MetaType_bool:
+			{
+				
+			}break;
+			case MetaType_bool:
+			{
+				
+			}break;
+			case MetaType_bool:
+			{
+				
+			}break;
+		}
+	}
+} 
+
+*/
 
 // In this case the match has the \0 operator at the end, but not the _token->text data, since it is a buffer with a lenght based on a bigger text buffer.
 global_f bool
@@ -104,13 +128,20 @@ token_equals(token _token, char *match)
 }
 
 
-global_f bool
+internal_f bool
 token_is_reflected(token _token)
 {
 	bool result = token_equals(_token, "MY_CLASS")
 		|| token_equals(_token, "MY_STRUCT")
 		|| token_equals(_token, "MY_ENUM");
 	
+	return result;
+}
+
+internal_f bool 
+token_is_property_reflection(token _token)
+{
+	bool result = token_equals(_token, "MY_PROPERTY");
 	return result;
 }
 
@@ -147,7 +178,7 @@ parse_reflection_params(tokenizer *_tokenizer)
 internal_f void 
 parsing_move_to(tokenizer *_tokenizer, enum_token_type target_token)
 {
-	bool moving = true;	
+	bool moving = true;
 	while((_tokenizer->at != 0) && (moving))
 	{
 		token this_token = get_token(_tokenizer);
@@ -157,12 +188,39 @@ parsing_move_to(tokenizer *_tokenizer, enum_token_type target_token)
 			break;
 		}
 	}
-	
-	
+		
 	if(moving)
 	{
 		fprintf(stderr, "ERROR: tried to go to %d token type but failed", target_token);
 	}	
+}
+
+
+internal_f void
+parse_member_params(tokenizer *tokenizer)
+{
+	for(;;)
+	{
+		token this_token = get_token(tokenizer);
+		if((this_token.type == Token_CloseParen)
+		   || (this_token.type == Token_EndOfStream))
+		{
+			break;
+		}
+		else if(this_token.type == Token_Identifier)
+		{
+			// params parsing here
+			
+			
+		}
+	}
+}
+
+
+internal_f void 
+skip_member(tokenizer *_tokenizer)
+{
+	parsing_move_to(_tokenizer, Token_Semicolon);
 }
 
 /**
@@ -183,13 +241,12 @@ parse_member(tokenizer *_tokenizer, token _struct_token, token _member_type_toke
 		{
 			// baiscally if we encounter one of this identifers, we just return sice we are not parsing: "static", "consts" or "constexpr"
 			parsing = false;
-			parsing_move_to(_tokenizer, Token_Semicolon);			
+			skip_member(_tokenizer);
 			break;
 		}
 		
 		switch(this_token.type)
-		{
-			
+		{			
 			case Token_Asterisk:
 			{
 				is_pointer = true;				
@@ -229,16 +286,23 @@ parse_struct(tokenizer *_tokenizer)
 		printf("{\n");
 		for(;;)
 		{
-			token member_type_token = get_token(_tokenizer);
-			
-			if(member_type_token.type == Token_CloseBraces)
+			token this_token = get_token(_tokenizer);			
+			if(this_token.type == Token_CloseBraces)
 			{
 				break;
 			}
 			else
 			{
-				// current struct member parsin with the member type
-				parse_member(_tokenizer, struct_type_token, member_type_token);
+				// Checking if the token we are about to parse is reflected, if it is, then we parse it
+				if(token_is_property_reflection(this_token))
+				{
+					// getting the token type token in here.
+					parse_member_params(_tokenizer);
+					
+					token member_type_token = get_token(_tokenizer);
+					parse_member(_tokenizer, struct_type_token, member_type_token);
+					
+				}
 			}
 		}
 		

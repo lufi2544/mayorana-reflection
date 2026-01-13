@@ -8,3 +8,13 @@ Parsing properties:
 After implementation:
 - add the types to reflect dynamically, so I don't have to add them by hand every time.
 - then validation for the types to make sense, and to check if the type is reflected and all that.
+
+
+I would like to somehow on the projects:
+- to first, mark the properties as REFLECTED.
+- create metadata ONLY from reflected properties.
+- we have all the reflected properties, then we create the MetadataEnum.
+- then:
+	- field iterator
+	- print default way a struct per project, this can be done in the proejct itself to by default print the project types.
+	- property validation.
