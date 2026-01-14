@@ -28,8 +28,19 @@ struct type_definition;
 struct member_definition
 {
 	char* name;
-	type_definition *type;
+	const type_definition *type;
 	u32 offset;
+};
+
+
+struct type_definition
+{
+	type_kind kind;
+	u32 size;
+	
+	// this is temporary for structs
+	const member_definition *members;
+	u32 member_count;		
 };
 
 /*
@@ -44,54 +55,55 @@ struct vec3
 
 2 - then the Metadata_types are created
 
+struct vec3
+{
+	float x, y, z;
+};
+
+
+
+const type_definition TYPE_F32_DEF = {
+    Type_f32,
+    sizeof(vec3),
+	0,
+	0
+};
+
 
 const member_definition VEC3_MEMBERS[] = {
-    { "x", offsetof(vec3, x), &TYPE_F32_DEF },
-    { "y", offsetof(vec3, y), &TYPE_F32_DEF },
-    { "z", offsetof(vec3, z), &TYPE_F32_DEF },
+    { "x", &TYPE_F32_DEF, (u64)&((vec3*)0)->x },
+    { "y", &TYPE_F32_DEF, OFFSET_OF(vec3, y) },
+    { "z", &TYPE_F32_DEF, OFFSET_OF(vec3, z) },
 };
 
 const type_definition TYPE_VEC3_DEF = {
-    TYPE_STRUCT,
+    Type_Struct,
     sizeof(vec3),
-    .struct_type = {
-        VEC3_MEMBERS,
-        3
-    }
+	VEC3_MEMBERS,
+    ArrayCount(VEC3_MEMBERS) 
 };
 
 
 struct GameData
 {
-   f32 health;
-   vec3 location;
+	f32 health;
+	vec3 location;
 };
 
 
 const member_definition GAME_DATA_MEMBERS []= 
 {
-   { "health", offsetof(GameData, health), &TYPE_F32_DEF}
-   { "location", offsetof(GameData, location), &TYPE_VEC3_DEF}
+	{ "health", &TYPE_F32_DEF, OFFSET_OF(GameData, health)},
+	{ "location", &TYPE_VEC3_DEF, OFFSET_OF(GameData, location)}
 };
 
 
 const type_definition GAME_DATA_TYPE = 
 {
-  TYPE_STRUCT,
-  sizeof(GameData),
-  GAME_DATA_MEMBERS,
-2
-}
-
+	Type_Struct,
+	sizeof(GameData),
+	GAME_DATA_MEMBERS,
+	ArrayCount(GAME_DATA_MEMBERS)
+};
 
 */
-
-struct type_definition
-{
-	type_kind kind;
-	u32 size;
-	
-	// this is temporary for structs
-	member_definition *members;
-	u32 member_count;		
-};
