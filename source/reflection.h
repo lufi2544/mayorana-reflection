@@ -139,7 +139,7 @@ token_is_reflected(token _token)
 }
 
 internal_f bool 
-token_is_property_reflection(token _token)
+token_is_property_reflected(token _token)
 {
 	bool result = token_equals(_token, "MY_PROPERTY");
 	return result;
@@ -223,55 +223,91 @@ skip_member(tokenizer *_tokenizer)
 	parsing_move_to(_tokenizer, Token_Semicolon);
 }
 
-/**
-* We don't support static const reflection, since I think it does not make sense for now? I have to investigate.
-*/
 internal_f void
-parse_member(tokenizer *_tokenizer, token _struct_token, token _member_type_token)
+generate_member_definition(tokenizer *_tokenizer, token _struct_type_token)
 {
-	bool is_pointer = false;
-	bool parsing = true;
-	while(parsing)
+	printf("const member_definition members_of_%.*s[] = \n", _struct_type_token.text_len, _struct_type_token.text);
+	printf("{\n");
+	
+	for(;;)
 	{
-		token this_token = get_token(_tokenizer);
-		
-		if((token_equals(this_token, "static")) ||
-		   (token_equals(this_token, "const")) || 
-		   (token_equals(this_token, "constexpr")))
+		token this_token = get_token(_tokenizer);			
+		if(this_token.type == Token_CloseBraces)
 		{
-			// baiscally if we encounter one of this identifers, we just return sice we are not parsing: "static", "consts" or "constexpr"
-			parsing = false;
-			skip_member(_tokenizer);
 			break;
 		}
-		
-		switch(this_token.type)
-		{			
-			case Token_Asterisk:
+		else
+		{
+			// Checking if the token we are about to parse is reflected, if it is, then we parse it
+			if(token_is_property_reflected(this_token))
 			{
-				is_pointer = true;				
+				// getting the token type token in here.
+				parse_member_params(_tokenizer);
 				
-			}break;
-			
-			case Token_Identifier:
-			{
-				printf("{MetaType_%.*s, \"%.*s\", (u32)&((%.*s *)0)->%.*s}, \n",
-					   _member_type_token.text_len, _member_type_token.text,
-					   this_token.text_len, this_token.text, 
-					   _struct_token.text_len, _struct_token.text, 
-					    this_token.text_len, this_token.text);
+				token member_type_token = get_token(_tokenizer);
 				
-			}break;
-			
-			case Token_Semicolon:
-			case Token_EndOfStream:
-			{
-				parsing = false;
-				
-			}break;
-			
+				bool is_pointer = false;
+				bool parsing = true;
+				while(parsing)
+				{
+					token this_token = get_token(_tokenizer);
+					
+					if((token_equals(this_token, "static")) ||
+					   (token_equals(this_token, "const")) || 
+					   (token_equals(this_token, "constexpr")))
+					{
+						// baiscally if we encounter one of this identifers, we just return sice we are not parsing: "static", "consts" or "constexpr"
+						parsing = false;
+						skip_member(_tokenizer);
+						break;
+					}
+					
+					switch(this_token.type)
+					{			
+						case Token_Asterisk:
+						{
+							is_pointer = true;				
+							
+						}break;
+						
+						case Token_Identifier:
+						{
+							printf("{\"%.*s\", &definition_of_%.*s, OFFSET_OF(%.*s, %.*s)}, \n",
+								   this_token.text_len, this_token.text,
+								   member_type_token.text_len, member_type_token.text,
+								   _struct_type_token.text_len, _struct_type_token.text,
+								   this_token.text_len, this_token.text);
+							
+						}break;
+						
+						case Token_Semicolon:
+						case Token_EndOfStream:
+						{
+							parsing = false;
+							
+						}break;
+						
+					}
+				}													
+			}
 		}
 	}
+	
+	printf("};\n");
+	printf("\n");
+}
+
+internal_f void
+generate_type_definition(tokenizer *_tokenizer, token _struct_type_token)
+{
+	printf("const type_definition definition_of_%.*s  = \n", _struct_type_token.text_len, _struct_type_token.text);
+	printf("{ \n");
+	printf("Type_Struct, \n");
+	printf("sizeof(%.*s), \n", _struct_type_token.text_len, _struct_type_token.text);
+	printf("members_of_%.*s, \n", _struct_type_token.text_len, _struct_type_token.text);
+	printf("ArrayCount(members_of_%.*s) \n", _struct_type_token.text_len, _struct_type_token.text);
+	printf("};\n");
+	printf("\n");
 }
 
 // TODO: in the future we will set this to be serializable only the MY_PROPERTY() fields
@@ -282,31 +318,9 @@ parse_struct(tokenizer *_tokenizer)
 	
 	if(require_token(_tokenizer, Token_OpenBraces))
 	{
-		printf("member_definition *members_of_%.*s[] = \n", struct_type_token.text_len, struct_type_token.text);
-		printf("{\n");
-		for(;;)
-		{
-			token this_token = get_token(_tokenizer);			
-			if(this_token.type == Token_CloseBraces)
-			{
-				break;
-			}
-			else
-			{
-				// Checking if the token we are about to parse is reflected, if it is, then we parse it
-				if(token_is_property_reflection(this_token))
-				{
-					// getting the token type token in here.
-					parse_member_params(_tokenizer);
-					
-					token member_type_token = get_token(_tokenizer);
-					parse_member(_tokenizer, struct_type_token, member_type_token);
-					
-				}
-			}
-		}
-		
-		printf("};\n");
+		// generating the member definitio and the type definition for this struct
+		generate_member_definition(_tokenizer, struct_type_token);
+		generate_type_definition(_tokenizer, struct_type_token);
 	}
 }
 

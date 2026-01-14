@@ -5,10 +5,10 @@
 // Reflection System macros for generating metadata on fields
 ///
 
-#define MY_CLASS(params)
-#define MY_STRUCT(params)
+#define MY_CLASS(...)
+#define MY_STRUCT(...)
 #define MY_ENUM(params)
-#define MY_PROPERTY(params)
+#define MY_PROPERTY(...)
 
 enum type_kind
 {
@@ -45,7 +45,7 @@ struct type_definition
 
 /*
 
-1- we first have to add the macros to the desired classes.
+ <-----> 1- we first have to add the macros to the desired classes.
 
 MY_STRUCT(all)
 struct vec3
@@ -53,7 +53,13 @@ struct vec3
     float x, y, z;
 };
 
-2 - then the Metadata_types are created
+ <-----> 2 - Generate the "base types" type definitions first, then the custom structs one.
+
+ <-----> 
+    - 
+
+ 
+ <-----> 3 - then the Metadata_types are created
 
 struct vec3
 {
@@ -61,8 +67,7 @@ struct vec3
 };
 
 
-
-const type_definition TYPE_F32_DEF = {
+const type_definition f32_Type_Def = {
     Type_f32,
     sizeof(vec3),
 	0,
@@ -70,19 +75,18 @@ const type_definition TYPE_F32_DEF = {
 };
 
 
-const member_definition VEC3_MEMBERS[] = {
-    { "x", &TYPE_F32_DEF, (u64)&((vec3*)0)->x },
-    { "y", &TYPE_F32_DEF, OFFSET_OF(vec3, y) },
-    { "z", &TYPE_F32_DEF, OFFSET_OF(vec3, z) },
+const member_definition *vec3_Members[] = {
+    { "x", &f32_Type_Def, (u64)&((vec3*)0)->x },
+    { "y", &f32_Type_Def, OFFSET_OF(vec3, y) },
+    { "z", &f32_Type_Def, OFFSET_OF(vec3, z) },
 };
 
 const type_definition TYPE_VEC3_DEF = {
     Type_Struct,
     sizeof(vec3),
-	VEC3_MEMBERS,
-    ArrayCount(VEC3_MEMBERS) 
+	vec3_Members,
+    ArrayCount(vec3_Members) 
 };
-
 
 struct GameData
 {
@@ -90,20 +94,55 @@ struct GameData
 	vec3 location;
 };
 
-
-const member_definition GAME_DATA_MEMBERS []= 
+const member_definition *GameData_Members []= 
 {
 	{ "health", &TYPE_F32_DEF, OFFSET_OF(GameData, health)},
 	{ "location", &TYPE_VEC3_DEF, OFFSET_OF(GameData, location)}
 };
 
 
-const type_definition GAME_DATA_TYPE = 
+const type_definition GameData_Type_Definition = 
 {
 	Type_Struct,
 	sizeof(GameData),
-	GAME_DATA_MEMBERS,
-	ArrayCount(GAME_DATA_MEMBERS)
+	GameData_Members,
+	ArrayCount(GameData_Members)
 };
 
 */
+
+
+/*
+MY_STRUCT()
+struct game_data
+{ 
+	MY_PROPERTY()
+		u64 players;
+	
+	MY_PROPERTY()
+		u64 players_num;
+};
+
+
+// TODO Investigate the member_definition* stuff vs no-pointer
+const type_definition definition_of_u64 = 
+{
+	Type_u64,
+	sizeof(u64),
+	0,
+	0
+};
+
+const member_definition members_of_game_data[] = 
+{
+	{"players", &definition_of_u64, OFFSET_OF(game_data, players)}, 
+	{"players_num", &definition_of_u64, OFFSET_OF(game_data, players_num)}, 
+};
+
+const type_definition definition_of_game_data  = 
+{ 
+	Type_Struct, 
+	sizeof(game_data), 
+	members_of_game_data, 
+	ArrayCount(members_of_game_data) 
+};*/

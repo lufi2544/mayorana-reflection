@@ -10,11 +10,12 @@ After implementation:
 - then validation for the types to make sense, and to check if the type is reflected and all that.
 
 
+///// METADATA GENEARATION 
+
+	- generate the type_definition for every basic type.
+	- generate the member_definition and the type definition for every struct.
+
+
 I would like to somehow on the projects:
-- to first, mark the properties as REFLECTED.
-- create metadata ONLY from reflected properties.
-- we have all the reflected properties, then we create the MetadataEnum.
 - then:
 	- field iterator
-	- print default way a struct per project, this can be done in the proejct itself to by default print the project types.
-	- property validation.
