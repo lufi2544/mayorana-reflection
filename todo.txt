@@ -12,10 +12,15 @@ After implementation:
 
 ///// METADATA GENEARATION 
 
-	- generate the type_definition for every basic type.
-	- generate the member_definition and the type definition for every struct.
+	- create a enum with the defenied structs- list with all the names and then create it at the end.
+	- basic types, type definition.
+
+	- discuss how to print the different types.
+
 
 
 I would like to somehow on the projects:
 - then:
 	- field iterator
+	- pointer handling
+	- buffer_t implementation.

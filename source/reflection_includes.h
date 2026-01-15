@@ -17,7 +17,7 @@ enum type_kind
 	Type_u32,
 	Type_u64,
 	Type_f32,
-	Type_BOOL,
+	Type_bool,
 	
 	Type_Struct,
 };
@@ -33,14 +33,18 @@ struct member_definition
 };
 
 
+/** in this case we will generate the kind_type for each project, and we will compare agains that with the generated enum like 
+* class_kind == ClassMeta_game_data, and so on
+*/
 struct type_definition
 {
 	type_kind kind;
+	u32 meta_type;
 	u32 size;
 	
 	// this is temporary for structs
 	const member_definition *members;
-	u32 member_count;		
+	u32 member_count;
 };
 
 /*

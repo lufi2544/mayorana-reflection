@@ -30,6 +30,17 @@ enum enum_token_type
 	Token_EndOfStream,
 };
 
+/// linked list to generate the ClassMeta_enum
+struct meta_node
+{
+	char* name;
+	meta_node* next;
+	meta_node* prev;
+};
+
+meta_node* current_meta_node;
+u32 meta_idx_counter = 0;
+
 struct token
 {
 	enum_token_type type;
@@ -188,7 +199,7 @@ parsing_move_to(tokenizer *_tokenizer, enum_token_type target_token)
 			break;
 		}
 	}
-		
+	
 	if(moving)
 	{
 		fprintf(stderr, "ERROR: tried to go to %d token type but failed", target_token);
@@ -303,6 +314,7 @@ generate_type_definition(tokenizer *_tokenizer, token _struct_type_token)
 	printf("const type_definition definition_of_%.*s  = \n", _struct_type_token.text_len, _struct_type_token.text);
 	printf("{ \n");
 	printf("Type_Struct, \n");
+	printf("%d,\n", meta_idx_counter++);
 	printf("sizeof(%.*s), \n", _struct_type_token.text_len, _struct_type_token.text);
 	printf("members_of_%.*s, \n", _struct_type_token.text_len, _struct_type_token.text);
 	printf("ArrayCount(members_of_%.*s) \n", _struct_type_token.text_len, _struct_type_token.text);
@@ -315,6 +327,25 @@ internal_f void
 parse_struct(tokenizer *_tokenizer)
 {
 	token struct_type_token = get_token(_tokenizer);
+	
+	
+	meta_node* new_meta_node = new meta_node();
+	new_meta_node->next = 0;
+	new_meta_node->prev = current_meta_node;
+	new_meta_node->name = (char*)malloc(struct_type_token.text_len + 1);
+	new_meta_node->name[0] = 0;
+	memcpy(new_meta_node->name, struct_type_token.text, struct_type_token.text_len);
+	new_meta_node->name[struct_type_token.text_len] = 0;
+	
+	if(!current_meta_node)
+	{
+		current_meta_node = new_meta_node;
+	}
+	else
+	{
+		current_meta_node->next = new_meta_node;
+		current_meta_node = new_meta_node;
+	}
 	
 	if(require_token(_tokenizer, Token_OpenBraces))
 	{
@@ -511,6 +542,40 @@ get_token(tokenizer *_tokenizer)
 		
 	}
 	
-			
+	
 	return result;
+}
+
+
+global_f void
+generate_meta_enum()
+{
+	if(!current_meta_node)
+	{
+		return;
+	}
+	
+	
+	printf("\n");
+	printf("enum meta_type : u32 \n");
+	printf("{\n");
+	
+	meta_node* first_node = 0;
+	
+	for(meta_node* node_idx = current_meta_node; 
+		node_idx;
+		node_idx = node_idx->prev)
+	{
+		first_node = node_idx;
+	}
+	
+	
+	for(meta_node* node_idx = first_node;
+		node_idx; 
+		node_idx = node_idx->next)
+	{
+		printf("MetaType_%s , \n", node_idx->name);
+	}
+	
+	printf("}; \n");
 }

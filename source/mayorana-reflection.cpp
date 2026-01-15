@@ -58,5 +58,9 @@ int main(int arg_num, char** args)
 	}
 	
 	
+	// this generates the enum to check the data types from the code.
+	generate_meta_enum();
+	
+	
 	return 0;
 }
