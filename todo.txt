@@ -21,6 +21,8 @@ After implementation:
 
 I would like to somehow on the projects:
 - then:
+	- parse number in the tokenizer.
+	- enum name iterator.
 	- field iterator
 	- pointer handling
 	- buffer_t implementation.

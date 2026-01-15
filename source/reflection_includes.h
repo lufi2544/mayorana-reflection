@@ -16,7 +16,12 @@ enum type_kind
 	Type_u16,
 	Type_u32,
 	Type_u64,
+	Type_s8,
+	Type_s16,
+	Type_s32,
+	Type_s64,
 	Type_f32,
+	Type_f64,
 	Type_bool,
 	
 	Type_Struct,
@@ -150,3 +155,173 @@ const type_definition definition_of_game_data  =
 	members_of_game_data, 
 	ArrayCount(members_of_game_data) 
 };*/
+
+
+const type_definition definition_of_u8 = 
+{ 
+	Type_u8, 
+	0,
+	0,
+	0,
+	0,
+};
+
+const type_definition definition_of_u16 = 
+{ 
+	Type_u16, 
+	0,
+	0,
+	0,
+	0,
+};
+
+const type_definition definition_of_u32 = 
+{ 
+	Type_u32, 
+	0,
+	0,
+	0,
+	0,
+};
+
+const type_definition definition_of_u64 = 
+{ 
+	Type_u64, 
+	0,
+	0,
+	0,
+	0,
+};
+
+const type_definition definition_of_s8 = 
+{ 
+	Type_s8, 
+	0,
+	0,
+	0,
+	0,
+};
+
+const type_definition definition_of_s16 = 
+{ 
+	Type_s16, 
+	0,
+	0,
+	0,
+	0,
+};
+
+const type_definition definition_of_s32 = 
+{ 
+	Type_s32, 
+	0,
+	0,
+	0,
+	0,
+};
+
+const type_definition definition_of_s64 = 
+{ 
+	Type_s64, 
+	0,
+	0,
+	0,
+	0,
+};
+
+const type_definition definition_of_f32 = 
+{ 
+	Type_f32, 
+	0,
+	0,
+	0,
+	0,
+};
+
+const type_definition definition_of_f64 = 
+{ 
+	Type_f64, 
+	0,
+	0,
+	0,
+	0,
+};
+
+const type_definition definition_of_bool = 
+{ 
+	Type_bool, 
+	0,
+	0,
+	0,
+	0,
+};
+
+const member_definition members_of_game_data[] = 
+{
+	{"players", &definition_of_u64, OFFSET_OF(game_data, players)}, 
+	{"players_num", &definition_of_u64, OFFSET_OF(game_data, players_num)}, 
+};
+
+const type_definition definition_of_game_data  = 
+{ 
+	Type_Struct, 
+	1,
+	sizeof(game_data), 
+	members_of_game_data, 
+	ArrayCount(members_of_game_data) 
+};
+
+const member_definition members_of_player_data[] = 
+{
+	{"players", &definition_of_u64, OFFSET_OF(player_data, players)}, 
+	{"players_num", &definition_of_u64, OFFSET_OF(player_data, players_num)}, 
+};
+
+const type_definition definition_of_player_data  = 
+{ 
+	Type_Struct, 
+	2,
+	sizeof(player_data), 
+	members_of_player_data, 
+	ArrayCount(members_of_player_data) 
+};
+
+const member_definition members_of_map_data[] = 
+{
+	{"players", &definition_of_u64, OFFSET_OF(map_data, players)}, 
+	{"players_num", &definition_of_u64, OFFSET_OF(map_data, players_num)}, 
+};
+
+const type_definition definition_of_map_data  = 
+{ 
+	Type_Struct, 
+	3,
+	sizeof(map_data), 
+	members_of_map_data, 
+	ArrayCount(members_of_map_data) 
+};
+
+const member_definition members_of_render_data[] = 
+{
+	{"players", &definition_of_u64, OFFSET_OF(render_data, players)}, 
+	{"players_num", &definition_of_u64, OFFSET_OF(render_data, players_num)}, 
+};
+
+const type_definition definition_of_render_data  = 
+{ 
+	Type_Struct, 
+	4,
+	sizeof(render_data), 
+	members_of_render_data, 
+	ArrayCount(members_of_render_data) 
+};
+
+
+enum meta_type : u32 
+{
+	MetaType_none, 
+	MetaType_game_data , 
+	MetaType_player_data , 
+	MetaType_map_data , 
+	MetaType_render_data , 
+}; 
