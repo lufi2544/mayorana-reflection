@@ -332,7 +332,6 @@ generate_type_definition(tokenizer *_tokenizer, token _struct_type_token)
 {
 	printf("const type_definition definition_of_%.*s  = \n", _struct_type_token.text_len, _struct_type_token.text);
 	printf("{ \n");
-	printf("Type_Struct, \n");
 	u32 current_meta_idx = (++meta_idx_counter + ArrayCount(basic_meta_types));
 	printf("%d,\n", current_meta_idx);
 	printf("sizeof(%.*s), \n", _struct_type_token.text_len, _struct_type_token.text);
@@ -565,28 +564,54 @@ get_token(tokenizer *_tokenizer)
 	return result;
 }
 
-
 internal_f void
-generate_meta_type_for(char *name)
+generate_type_definition_for(char *name, int idx)
 {
-	printf("MetaType_%s, \n", name);
+	printf("const type_definition definition_of_%s = \n", name);
+	printf("{ \n");
+	printf("%d, \n", idx);
+	printf("sizeof(%s), \n", name);
+	printf("0, \n");
+	printf("0 \n");
+	printf("};\n");
+	printf("\n");
 }
 
-
 internal_f void
-generate_basic_types_meta()
-{
+generate_basic_types_definition()
+{	
+	// Type definition struct
 	for(int idx = 0;
 		idx < ArrayCount(basic_meta_types);
 		++idx)
 	{
 		char* type = basic_meta_types[idx];
-		generate_meta_type_for(type);
+		generate_type_definition_for(type, idx + 1 /* we add up 1 as the 0 is MetaType_None */);
+	}
+}
+
+internal_f void
+generate_meta_enum_for(char *name)
+{
+	printf("MetaType_%s, \n", name);
+}
+
+internal_f void
+generate_basic_types_meta()
+{
+	
+	// MetaType enum definition.
+	for(int idx = 0;
+		idx < ArrayCount(basic_meta_types);
+		++idx)
+	{
+		char* type = basic_meta_types[idx];
+		generate_meta_enum_for(type);
 	}
 }
 
 global_f void
-generate_meta_enum()
+generate_meta_enum_for_reflected()
 {
 	if(!current_meta_node)
 	{
@@ -597,7 +622,7 @@ generate_meta_enum()
 	printf("enum meta_type : u32 \n");
 	printf("{\n");
 	printf("MetaType_none, \n");	
-	
+		
 	generate_basic_types_meta();
 	
 	// going back in he list to the first element to recreate the enum in the correct order

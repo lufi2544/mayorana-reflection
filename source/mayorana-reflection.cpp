@@ -23,6 +23,10 @@ int main(int arg_num, char** args)
 		printf("Failed to load the file \n");
 		return 1;
 	}
+	
+	
+	// creates the type definition for introspection
+	generate_basic_types_definition();
 		
 	bool parsing = true;
 	while(parsing)
@@ -58,9 +62,8 @@ int main(int arg_num, char** args)
 	}
 	
 	
-	// this generates the enum to check the data types from the code.
-	generate_meta_enum();
-	
+	// creates the enum to check the data types from the code.
+	generate_meta_enum_for_reflected();		
 	
 	return 0;
 }
