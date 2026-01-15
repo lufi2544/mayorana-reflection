@@ -23,9 +23,7 @@ int main(int arg_num, char** args)
 		printf("Failed to load the file \n");
 		return 1;
 	}
-	
-	generate_basic_type_definitions();
-	
+		
 	bool parsing = true;
 	while(parsing)
 	{

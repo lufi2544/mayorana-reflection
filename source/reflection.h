@@ -9,6 +9,35 @@
 */
 //////////////////////
 
+//////////////
+// Basic types the the reflection system supports
+char* basic_meta_types [] = 
+{
+	"u8", 
+	"u16", 
+	"u32", 
+	"u64", 
+	"s8", 
+	"s16", 
+	"s32", 
+	"s64", 
+	"f32", 
+	"f64", 
+	"bool", 
+};
+
+/// linked list to generate the ClassMeta_enum
+struct meta_node
+{
+	char* name;
+	meta_node* next;
+	meta_node* prev;
+};
+
+meta_node* current_meta_node;
+u32 meta_idx_counter = 0;
+/////////////
+
 
 enum enum_token_type
 {
@@ -30,16 +59,6 @@ enum enum_token_type
 	Token_EndOfStream,
 };
 
-/// linked list to generate the ClassMeta_enum
-struct meta_node
-{
-	char* name;
-	meta_node* next;
-	meta_node* prev;
-};
-
-meta_node* current_meta_node;
-u32 meta_idx_counter = 0;
 
 struct token
 {
@@ -314,7 +333,8 @@ generate_type_definition(tokenizer *_tokenizer, token _struct_type_token)
 	printf("const type_definition definition_of_%.*s  = \n", _struct_type_token.text_len, _struct_type_token.text);
 	printf("{ \n");
 	printf("Type_Struct, \n");
-	printf("%d,\n", ++meta_idx_counter);
+	u32 current_meta_idx = (++meta_idx_counter + ArrayCount(basic_meta_types));
+	printf("%d,\n", current_meta_idx);
 	printf("sizeof(%.*s), \n", _struct_type_token.text_len, _struct_type_token.text);
 	printf("members_of_%.*s, \n", _struct_type_token.text_len, _struct_type_token.text);
 	printf("ArrayCount(members_of_%.*s) \n", _struct_type_token.text_len, _struct_type_token.text);
@@ -541,39 +561,28 @@ get_token(tokenizer *_tokenizer)
 		}
 		
 	}
-		
+	
 	return result;
 }
 
 
 internal_f void
-generate_type_definition_for(char *name)
+generate_meta_type_for(char *name)
 {
-	printf("const type_definition definition_of_%s = \n", name);
-	printf("{ \n");
-	printf("Type_%s, \n", name);
-	printf("0,\n");
-	printf("0,\n");
-	printf("0,\n");
-	printf("0,\n");
-	printf("};\n");
-	printf("\n");
+	printf("MetaType_%s, \n", name);
 }
 
-global_f void
-generate_basic_type_definitions()
+
+internal_f void
+generate_basic_types_meta()
 {
-	generate_type_definition_for("u8");
-	generate_type_definition_for("u16");
-	generate_type_definition_for("u32");
-	generate_type_definition_for("u64");
-	generate_type_definition_for("s8");
-	generate_type_definition_for("s16");
-	generate_type_definition_for("s32");
-	generate_type_definition_for("s64");		
-	generate_type_definition_for("f32");
-	generate_type_definition_for("f64");
-	generate_type_definition_for("bool");
+	for(int idx = 0;
+		idx < ArrayCount(basic_meta_types);
+		++idx)
+	{
+		char* type = basic_meta_types[idx];
+		generate_meta_type_for(type);
+	}
 }
 
 global_f void
@@ -587,8 +596,9 @@ generate_meta_enum()
 	printf("\n");
 	printf("enum meta_type : u32 \n");
 	printf("{\n");
-	printf("MetaType_none, \n");
+	printf("MetaType_none, \n");	
 	
+	generate_basic_types_meta();
 	
 	// going back in he list to the first element to recreate the enum in the correct order
 	meta_node* first_node = 0;
@@ -605,7 +615,7 @@ generate_meta_enum()
 		node_idx; 
 		node_idx = node_idx->next)
 	{
-		printf("MetaType_%s , \n", node_idx->name);
+		printf("MetaType_%s, \n", node_idx->name);
 	}
 	
 	printf("}; \n");
