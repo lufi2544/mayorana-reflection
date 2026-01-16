@@ -1,6 +1,7 @@
 /* date = January 8th 2026 7:19 pm */
 
 #include "reflection_includes.h"
+#include <cstring>
 
 //////////////////////
 /*
@@ -26,18 +27,41 @@ char* basic_meta_types [] =
 	"bool", 
 };
 
+
+struct member_node
+{
+	char* type;
+	char* name;
+	u32 flags;
+	
+	member_node *next;
+};
+
 /// linked list to generate the ClassMeta_enum
 struct meta_node
 {
 	char* name;
+	member_node *member;
+	
 	meta_node* next;
 	meta_node* prev;
 };
 
 meta_node* current_meta_node;
 u32 meta_idx_counter = 0;
+
 /////////////
 
+struct flag_name
+{
+	u32 flag;
+	const char *name;
+};
+
+global const flag_name MemberFlagNames[] =
+{
+	{ MemberFlag_IsPointer, "MemberFlag_IsPointer" },
+};
 
 enum enum_token_type
 {
@@ -254,14 +278,35 @@ skip_member(tokenizer *_tokenizer)
 }
 
 internal_f void
-generate_member_definition(tokenizer *_tokenizer, token _struct_type_token)
+get_member_flags_string(u32 flags, char *buffer)
 {
-	printf("const member_definition members_of_%.*s[] = \n", _struct_type_token.text_len, _struct_type_token.text);
-	printf("{\n");
+	buffer[0] = 0;
+	char *at = buffer;
 	
+	for(int i = 0;
+		i < ArrayCount(MemberFlagNames);
+		++i)
+	{
+		if(flags & MemberFlagNames[i].flag)
+		{
+			if(at != buffer)
+			{
+				strcat(at, " || ");
+			}
+			
+			strcat(at, MemberFlagNames[i].name);
+		}
+	}
+}
+
+
+// TODO: Change this to Parsing or somethig
+internal_f void
+generate_member_definition(tokenizer *_tokenizer, token _struct_type_token, meta_node *_struct_meta)
+{	
 	for(;;)
 	{
-		token this_token = get_token(_tokenizer);			
+		token this_token = get_token(_tokenizer);
 		if(this_token.type == Token_CloseBraces)
 		{
 			break;
@@ -276,7 +321,7 @@ generate_member_definition(tokenizer *_tokenizer, token _struct_type_token)
 				
 				token member_type_token = get_token(_tokenizer);
 				
-				bool is_pointer = false;
+				u32 member_flags = 0;
 				bool parsing = true;
 				while(parsing)
 				{
@@ -296,17 +341,37 @@ generate_member_definition(tokenizer *_tokenizer, token _struct_type_token)
 					{			
 						case Token_Asterisk:
 						{
-							is_pointer = true;				
-							
+							member_flags |= MemberFlag_IsPointer;						
 						}break;
 						
 						case Token_Identifier:
 						{
-							printf("{\"%.*s\", &definition_of_%.*s, OFFSET_OF(%.*s, %.*s)}, \n",
-								   this_token.text_len, this_token.text,
-								   member_type_token.text_len, member_type_token.text,
-								   _struct_type_token.text_len, _struct_type_token.text,
-								   this_token.text_len, this_token.text);
+														
+							// name cpy
+							member_node *this_member = (member_node*)malloc(sizeof(member_node));
+							this_member->next = 0;
+							this_member->name = (char*)malloc(this_token.text_len + 1);
+							snprintf(this_member->name, this_token.text_len + 1, "%s", this_token.text);
+							
+							
+							// type cpy
+							this_member->type = (char*)malloc(member_type_token.text_len + 1);
+							snprintf(this_member->type, member_type_token.text_len + 1, "%s", member_type_token.text);
+							
+							this_member->flags = member_flags;							
+							
+							if(_struct_meta)
+							{
+								member_node *current_membe_node = _struct_meta->member;
+								
+								if(current_membe_node)
+								{
+									this_member->next = current_membe_node;
+								}
+								
+								_struct_meta->member = this_member;								
+							}
+							
 							
 						}break;
 						
@@ -321,24 +386,8 @@ generate_member_definition(tokenizer *_tokenizer, token _struct_type_token)
 				}													
 			}
 		}
-	}
+	}	
 	
-	printf("};\n");
-	printf("\n");
-}
-
-internal_f void
-generate_type_definition(tokenizer *_tokenizer, token _struct_type_token)
-{
-	printf("const type_definition definition_of_%.*s  = \n", _struct_type_token.text_len, _struct_type_token.text);
-	printf("{ \n");
-	u32 current_meta_idx = (++meta_idx_counter + ArrayCount(basic_meta_types));
-	printf("%d,\n", current_meta_idx);
-	printf("sizeof(%.*s), \n", _struct_type_token.text_len, _struct_type_token.text);
-	printf("members_of_%.*s, \n", _struct_type_token.text_len, _struct_type_token.text);
-	printf("ArrayCount(members_of_%.*s) \n", _struct_type_token.text_len, _struct_type_token.text);
-	printf("};\n");
-	printf("\n");
 }
 
 // TODO: in the future we will set this to be serializable only the MY_PROPERTY() fields
@@ -348,6 +397,7 @@ parse_struct(tokenizer *_tokenizer)
 	token struct_type_token = get_token(_tokenizer);
 	
 	
+	// Meta type enum generation
 	meta_node* new_meta_node = new meta_node();
 	new_meta_node->next = 0;
 	new_meta_node->prev = current_meta_node;
@@ -369,8 +419,8 @@ parse_struct(tokenizer *_tokenizer)
 	if(require_token(_tokenizer, Token_OpenBraces))
 	{
 		// generating the member definitio and the type definition for this struct
-		generate_member_definition(_tokenizer, struct_type_token);
-		generate_type_definition(_tokenizer, struct_type_token);
+		generate_member_definition(_tokenizer, struct_type_token, current_meta_node);
+		//generate_type_definition(_tokenizer, struct_type_token);
 	}
 }
 
@@ -610,6 +660,20 @@ generate_basic_types_meta()
 	}
 }
 
+internal_f void
+generate_basic_types_meta_type()
+{
+	for(int idx = 0;
+		idx < ArrayCount(basic_meta_types);
+		++idx)
+	{
+		char* type = basic_meta_types[idx];
+		generate_meta_enum_for(type);
+	}
+}
+
+meta_node* first_meta_node = 0;
+
 global_f void
 generate_meta_enum_for_reflected()
 {
@@ -635,6 +699,7 @@ generate_meta_enum_for_reflected()
 		first_node = node_idx;
 	}
 	
+	first_meta_node = first_node;
 	
 	for(meta_node* node_idx = first_node;
 		node_idx; 
@@ -644,4 +709,116 @@ generate_meta_enum_for_reflected()
 	}
 	
 	printf("}; \n");
+	printf("\n");
 }
+
+internal_f void
+generate_member_definition_for_reflected()
+{
+	if(!first_meta_node)
+	{
+		return;
+	}
+	
+		
+	for(meta_node *node_idx = first_meta_node;
+		node_idx;
+		node_idx = node_idx->next)
+	{
+		
+		printf("const member_definition members_of_%s[] = \n", node_idx->name);
+		printf("{\n");
+		for(member_node *member_idx = node_idx->member;
+			member_idx;
+			member_idx = member_idx->next)
+		{
+			char member_flags_string [256];
+			member_flags_string[0] = 0;			
+			get_member_flags_string(member_idx->flags, member_flags_string);
+			
+			printf("{\"%s\", MetaType_%s, OFFSET_OF(%s, %s), %s}, \n",
+				   member_idx->name,
+				   member_idx->type,
+				   node_idx->name,
+				   member_idx->name,
+				   member_flags_string[0] != 0 ? member_flags_string : "0");
+		}
+		
+		printf("};\n");
+		printf("\n");	
+	}
+	
+
+}
+
+internal_f void
+generate_type_definition_for_reflected()
+{
+	if(!first_meta_node)
+	{
+		return;
+	}
+	
+	for(meta_node *idx = first_meta_node;
+		idx;
+		idx = idx->next)
+	{
+		printf("const type_definition definition_of_%s \n", idx->name);
+		printf("{ \n");			
+		
+		// the meta_type with the idx 0 is the MetaType_none, so we start at 1.
+		u32 current_meta_idx = (++meta_idx_counter + ArrayCount(basic_meta_types));
+		printf("%d, \n", current_meta_idx);
+		printf("sizeof(%s), \n", idx->name);
+		printf("members_of_%s, \n", idx->name);
+		printf("ArrayCount(members_of_%s) \n", idx->name);				
+		
+		printf("}; \n");
+	}
+}
+
+
+//  we will have a table that for getting a certain type and access its members, we will have to check against the enum MetaType_xxx assigned to it.
+internal_f void
+generate_type_definition_table()
+{
+	printf("\n");
+	
+	printf("const type_definition* all_type_definitions[] = \n");
+	printf("{\n");
+	
+	// Filll the array with the basic types
+	for(u32 idx = 0; 
+		idx < ArrayCount(basic_meta_types);
+		++idx)
+	{
+		const char* basic_type = basic_meta_types[idx];
+		printf("&definition_of_%s, \n", basic_type);
+	}
+	
+	printf("\n");
+	
+	// Custom struct types
+	for(meta_node *idx = first_meta_node;
+		idx;
+		idx = idx->next)
+	{
+		printf("&definition_of_%s, \n", idx->name);
+	}
+	
+	printf("};\n");
+}
+
+
+// TODO: should we pass the size for the table here?
+global_f const type_definition*
+get_type_definition(const type_definition** types_definition_table, u32 table_size, u32 meta_type)
+{
+	if((!types_definition_table) || 
+	   (table_size <= (meta_type - 1)))
+	{
+		return 0;
+	}
+	const type_definition* result = types_definition_table[meta_type - 1];	
+	return result;
+} 

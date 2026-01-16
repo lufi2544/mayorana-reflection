@@ -14,7 +14,7 @@ int main(int arg_num, char** args)
 	
 	SCRATCH();
 	
-	buffer_t file_buffer = read_file_and_add_null_at_end(temp_arena, "game.h");
+	buffer_t file_buffer = read_file_and_add_null_at_end(temp_arena, "mayorana.h");
 	tokenizer this_tokenizer = {};
 	this_tokenizer.at = (char*)file_buffer.data;
 	
@@ -25,9 +25,7 @@ int main(int arg_num, char** args)
 	}
 	
 	
-	// creates the type definition for introspection
-	generate_basic_types_definition();
-		
+	// In this step we get the relevant data from the code, so we can create a node list to later on create the generated data to a file for reflection.
 	bool parsing = true;
 	while(parsing)
 	{
@@ -62,8 +60,23 @@ int main(int arg_num, char** args)
 	}
 	
 	
-	// creates the enum to check the data types from the code.
-	generate_meta_enum_for_reflected();		
+	// Once the data is gathered, we generate it here in the correct oreder.
+	generate_meta_enum_for_reflected();
+	generate_basic_types_definition();
+	generate_member_definition_for_reflected();
+	generate_type_definition_for_reflected();
+	generate_type_definition_table();
+	
+	
+	
+	const type_definition* def = get_type_definition(all_type_definitions, ArrayCount(all_type_definitions), MetaType_buffer_t);
+	if(def)
+	{
+		printf("META_TYPE: %i", def->meta_type);
+		
+	}
+	
+	
 	
 	return 0;
 }

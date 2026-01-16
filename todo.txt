@@ -1,6 +1,25 @@
 
 ////// MY REFLECTION /////
 
+TODO:
+- Watch the Casey video and start implementing the printing and test in a small project. 
+- test reflection in the small project.
+
+
+	- Generate the member_defintion enum.
+	- Generate the member_definition array for every struct.
+	- Generate the type_definitions for every struct.
+
+	- Generate the type_definition table for every meta type.
+	
+
+PROBLEMS:
+
+	- dependency chain when generating and compiling, we can introduce a type definition and we need to refer another
+		type definition that is not created yet.
+
+			-> for this we can use an id for every type and add them to a table.
+
 Parsing properties:
 - Just reflect the properties with MY_PROPERTY() identifier.
 - Should we reflect constexpr, const or static members?
@@ -9,18 +28,12 @@ After implementation:
 - add the types to reflect dynamically, so I don't have to add them by hand every time.
 - then validation for the types to make sense, and to check if the type is reflected and all that.
 
-
 ///// METADATA GENEARATION 
-
-	- create a enum with the defenied structs- list with all the names and then create it at the end.
-	- basic types, type definition.
-
 	- discuss how to print the different types.
 
-
-
 I would like to somehow on the projects:
-- then:
+	- maybe generating all the types_definition for the struct first and then the member definition?
+	- flags for pointer reference.
 	- parse number in the tokenizer.
 	- enum name iterator.
 	- field iterator
