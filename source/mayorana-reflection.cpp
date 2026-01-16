@@ -69,14 +69,16 @@ int main(int arg_num, char** args)
 	
 	
 	
-	const type_definition* def = get_type_definition(all_type_definitions, ArrayCount(all_type_definitions), MetaType_buffer_t);
-	if(def)
-	{
-		printf("META_TYPE: %i", def->meta_type);
+	/*	const type_definition* def = get_type_definition(all_type_definitions, ArrayCount(all_type_definitions), MetaType_buffer_t);
+		if(def)
+		{
+			printf("META_TYPE: %i", def->meta_type);
+			
+		}
+	
+*/
 		
+		
+		
+		return 0;
 	}
-	
-	
-	
-	return 0;
-}

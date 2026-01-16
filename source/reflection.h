@@ -12,6 +12,8 @@
 
 //////////////
 // Basic types the the reflection system supports
+// IMPORTANT: This has to be equal to the primitive_meta_type enum @see: reflection_includes.h, since the fields has to match.
+//
 char* basic_meta_types [] = 
 {
 	"u8", 
@@ -26,7 +28,6 @@ char* basic_meta_types [] =
 	"f64", 
 	"bool", 
 };
-
 
 struct member_node
 {
@@ -119,7 +120,7 @@ print_struct(u32 _member_count, member_definition *_struct_definition, void *str
 		member_definition *member = _struct_definition + member_idx;
 		char text_buffer[256];
 		text_buffer[0] = 0;
-		swtict(member->type)
+		swtich(member->type)
 		{
 			case Metatype_u32:
 			{
@@ -708,6 +709,7 @@ generate_meta_enum_for_reflected()
 		printf("MetaType_%s, \n", node_idx->name);
 	}
 	
+	printf("MetaType_num \n");
 	printf("}; \n");
 	printf("\n");
 }
@@ -774,6 +776,7 @@ generate_type_definition_for_reflected()
 		printf("ArrayCount(members_of_%s) \n", idx->name);				
 		
 		printf("}; \n");
+		printf("\n");
 	}
 }
 
@@ -787,6 +790,7 @@ generate_type_definition_table()
 	printf("const type_definition* all_type_definitions[] = \n");
 	printf("{\n");
 	
+	printf("0, \n");
 	// Filll the array with the basic types
 	for(u32 idx = 0; 
 		idx < ArrayCount(basic_meta_types);
@@ -809,16 +813,3 @@ generate_type_definition_table()
 	printf("};\n");
 }
 
-
-// TODO: should we pass the size for the table here?
-global_f const type_definition*
-get_type_definition(const type_definition** types_definition_table, u32 table_size, u32 meta_type)
-{
-	if((!types_definition_table) || 
-	   (table_size <= (meta_type - 1)))
-	{
-		return 0;
-	}
-	const type_definition* result = types_definition_table[meta_type - 1];	
-	return result;
-} 

@@ -3,22 +3,11 @@
 
 TODO:
 - Watch the Casey video and start implementing the printing and test in a small project. 
-- test reflection in the small project.
-
-
-	- Generate the member_defintion enum.
-	- Generate the member_definition array for every struct.
-	- Generate the type_definitions for every struct.
-
-	- Generate the type_definition table for every meta type.
-	
+- test reflection in the small project.	
 
 PROBLEMS:
 
-	- dependency chain when generating and compiling, we can introduce a type definition and we need to refer another
-		type definition that is not created yet.
-
-			-> for this we can use an id for every type and add them to a table.
+	- first thing we have to do is to parse Mayorana, once this is done, then continue with the other project files.
 
 Parsing properties:
 - Just reflect the properties with MY_PROPERTY() identifier.
@@ -39,3 +28,11 @@ I would like to somehow on the projects:
 	- field iterator
 	- pointer handling
 	- buffer_t implementation.
+
+
+
+
+TESTS:
+	- test wiht a ptr of a type, like a u64 or something.
+	- test with a ptr of a primitive mayorana class.
+
