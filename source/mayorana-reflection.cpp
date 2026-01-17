@@ -14,6 +14,13 @@ int main(int arg_num, char** args)
 	
 	SCRATCH();
 	
+	
+	string_t name = STRING_V(temp_arena, "ishak");
+	u32 player_id = 32;
+	
+	game_data game = { &name, player_id };		
+	print_struct("main_game_data", all_type_definitions, ArrayCount(all_type_definitions), &definition_of_game_data, &game);
+	
 	buffer_t file_buffer = read_file_and_add_null_at_end(temp_arena, "mayorana.h");
 	tokenizer this_tokenizer = {};
 	this_tokenizer.at = (char*)file_buffer.data;
@@ -77,7 +84,6 @@ int main(int arg_num, char** args)
 		}
 	
 */
-		
 		
 		
 		return 0;

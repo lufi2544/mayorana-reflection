@@ -620,6 +620,7 @@ generate_type_definition_for(char *name, int idx)
 {
 	printf("const type_definition definition_of_%s = \n", name);
 	printf("{ \n");
+	printf("\"%s\", \n", name);
 	printf("%d, \n", idx);
 	printf("sizeof(%s), \n", name);
 	printf("0, \n");
@@ -700,8 +701,11 @@ generate_meta_enum_for_reflected()
 		first_node = node_idx;
 	}
 	
+	// first meta_node caching
 	first_meta_node = first_node;
 	
+	printf("\n");
+		
 	for(meta_node* node_idx = first_node;
 		node_idx; 
 		node_idx = node_idx->next)
@@ -767,7 +771,7 @@ generate_type_definition_for_reflected()
 	{
 		printf("const type_definition definition_of_%s \n", idx->name);
 		printf("{ \n");			
-		
+		printf(" \"%s\",\n", idx->name);
 		// the meta_type with the idx 0 is the MetaType_none, so we start at 1.
 		u32 current_meta_idx = (++meta_idx_counter + ArrayCount(basic_meta_types));
 		printf("%d, \n", current_meta_idx);
