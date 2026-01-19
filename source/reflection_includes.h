@@ -48,7 +48,7 @@ enum primitive_meta_type : u32
 struct member_definition
 {
 	char* name;
-	u32 type_definition_id;
+	u32 meta_type;
 	u32 offset;
 	u32 flags;
 };
@@ -105,7 +105,7 @@ print_struct(char *struct_name, const type_definition **type_table, u32 type_tab
 		++member_idx)		
 	{				
 		const member_definition *this_member_definition = struct_definition->members + member_idx;		
-		const type_definition * this_member_type = get_type_definition(type_table, type_table_size, this_member_definition->type_definition_id);
+		const type_definition * this_member_type = get_type_definition(type_table, type_table_size, this_member_definition->meta_type);
 		
 		u8* struct_address = (u8*)struct_ptr;
 		u8* member_ptr = struct_address + this_member_definition->offset;
@@ -118,7 +118,7 @@ print_struct(char *struct_name, const type_definition **type_table, u32 type_tab
 			member_ptr = real_ptr;
 		}
 		
-		primitive_meta_type meta_type = (primitive_meta_type)this_member_definition->type_definition_id;
+		primitive_meta_type meta_type = (primitive_meta_type)this_member_definition->meta_type;
 		switch(meta_type)
 		{							
 			// TODO: Make sure if any reflected native type is added, we inticate that.

@@ -12,7 +12,8 @@
 
 //////////////
 // Basic types the the reflection system supports
-// IMPORTANT: This has to be equal to the primitive_meta_type enum @see: reflection_includes.h, since the fields has to match.
+// IMPORTANT: This has to be equal to the primitive_meta_type enum @see: reflection_includes.h, since the fields has to match, we need to know about this primitives at this libs compile time
+// to generically know how to print "mayorana.h" primitives and data structures.
 //
 char* basic_meta_types [] = 
 {
