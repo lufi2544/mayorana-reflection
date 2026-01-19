@@ -621,8 +621,8 @@ generate_type_definition_for(char *name, int idx)
 	printf("const type_definition definition_of_%s = \n", name);
 	printf("{ \n");
 	printf("\"%s\", \n", name);
-	printf("%d, \n", idx);
 	printf("sizeof(%s), \n", name);
+//	printf("%d, \n", idx);
 	printf("0, \n");
 	printf("0 \n");
 	printf("};\n");
@@ -774,7 +774,7 @@ generate_type_definition_for_reflected()
 		printf(" \"%s\",\n", idx->name);
 		// the meta_type with the idx 0 is the MetaType_none, so we start at 1.
 		u32 current_meta_idx = (++meta_idx_counter + ArrayCount(basic_meta_types));
-		printf("%d, \n", current_meta_idx);
+//		printf("%d, \n", current_meta_idx);
 		printf("sizeof(%s), \n", idx->name);
 		printf("members_of_%s, \n", idx->name);
 		printf("ArrayCount(members_of_%s) \n", idx->name);				

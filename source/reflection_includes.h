@@ -10,34 +10,19 @@
 #define MY_ENUM(...)
 #define MY_PROPERTY(...)
 
-struct member_definition
-{
-	char* name;
-	u32 type_definition_id;
-	u32 offset;
-	u32 flags;
-};
 
-struct type_definition
-{
-	char* name;
-	u32 meta_type;
-	u32 size;
-	
-	const member_definition *members;
-	u32 member_count;
-};
-
-
-
-enum member_flag : u32
-{		
-	MemberFlag_None = 0,
-	MemberFlag_IsPointer = 1 << 0,
-		
-	MemberFlag_Num,
-};
-
+/**
+ * ****IMPORTANT ****
+ * 
+ * As this reflection library is inteded to use among my projects, I don't want to specify in every of them
+ * the way of printing and handling this base primitives from "mayorana.h", and in this case the intention is
+ * to include this header and don't worrying about how the string_t or other "mayorana.h" is handled, we need to figure
+ * out a way so at this lib's compile time, we know the metatype of what we intend to print, and to handle it.
+ * 
+ * My solution for this is to generate a MetaType_ enum in the reflection in the same order than this one here, so we don't break the 
+ * enumeration in the types. As this is my personal projects reflection system is fine.CONS: whenever I add a reflected struct from "mayorana.h"
+ * I need to be careful in the order.
+*/
 enum primitive_meta_type : u32
 {
 	PrimitiveType_None,
@@ -52,9 +37,39 @@ enum primitive_meta_type : u32
 	PrimitiveType_f32,
 	PrimitiveType_f64,
 	PrimitiveType_bool,	
+	
 	PrimitiveType_buffer_t,		
 	PrimitiveType_string_t,	
 	// Add as many as Mayorana supports from mayoran.h
+};
+
+
+
+struct member_definition
+{
+	char* name;
+	u32 type_definition_id;
+	u32 offset;
+	u32 flags;
+};
+
+struct type_definition
+{
+	char* name;
+	u32 size;
+	
+	const member_definition *members;
+	u32 member_count;
+};
+
+
+
+enum member_flag : u32
+{		
+	MemberFlag_None = 0,
+	MemberFlag_IsPointer = 1 << 0,
+		
+	MemberFlag_Num,
 };
 
 
@@ -103,7 +118,7 @@ print_struct(char *struct_name, const type_definition **type_table, u32 type_tab
 			member_ptr = real_ptr;
 		}
 		
-		primitive_meta_type meta_type = (primitive_meta_type)this_member_type->meta_type;
+		primitive_meta_type meta_type = (primitive_meta_type)this_member_definition->type_definition_id;
 		switch(meta_type)
 		{							
 			// TODO: Make sure if any reflected native type is added, we inticate that.
@@ -180,205 +195,6 @@ print_struct(char *struct_name, const type_definition **type_table, u32 type_tab
 		}
 	}				
 	
-	printf(" } \n");
+	printf("} \n");
 	
 }
-
-
-
-MY_STRUCT()
-struct game_data
-{
-	MY_PROPERTY()
-		string_t* player_name;
-	
-	MY_PROPERTY()
-		u32 player_id;
-};
-
-
-enum meta_type : u32 
-{
-	MetaType_none, 
-	MetaType_u8, 
-	MetaType_u16, 
-	MetaType_u32, 
-	MetaType_u64, 
-	MetaType_s8, 
-	MetaType_s16, 
-	MetaType_s32, 
-	MetaType_s64, 
-	MetaType_f32, 
-	MetaType_f64, 
-	MetaType_bool, 
-	
-	MetaType_buffer_t, 
-	MetaType_string_t, 
-	MetaType_game_data, 
-	MetaType_num 
-}; 
-
-const type_definition definition_of_u8 = 
-{ 
-	"u8", 
-	1, 
-	sizeof(u8), 
-	0, 
-	0 
-};
-
-const type_definition definition_of_u16 = 
-{ 
-	"u16", 
-	2, 
-	sizeof(u16), 
-	0, 
-	0 
-};
-
-const type_definition definition_of_u32 = 
-{ 
-	"u32", 
-	3, 
-	sizeof(u32), 
-	0, 
-	0 
-};
-
-const type_definition definition_of_u64 = 
-{ 
-	"u64", 
-	4, 
-	sizeof(u64), 
-	0, 
-	0 
-};
-
-const type_definition definition_of_s8 = 
-{ 
-	"s8", 
-	5, 
-	sizeof(s8), 
-	0, 
-	0 
-};
-
-const type_definition definition_of_s16 = 
-{ 
-	"s16", 
-	6, 
-	sizeof(s16), 
-	0, 
-	0 
-};
-
-const type_definition definition_of_s32 = 
-{ 
-	"s32", 
-	7, 
-	sizeof(s32), 
-	0, 
-	0 
-};
-
-const type_definition definition_of_s64 = 
-{ 
-	"s64", 
-	8, 
-	sizeof(s64), 
-	0, 
-	0 
-};
-
-const type_definition definition_of_f32 = 
-{ 
-	"f32", 
-	9, 
-	sizeof(f32), 
-	0, 
-	0 
-};
-
-const type_definition definition_of_f64 = 
-{ 
-	"f64", 
-	10, 
-	sizeof(f64), 
-	0, 
-	0 
-};
-
-const type_definition definition_of_bool = 
-{ 
-	"bool", 
-	11, 
-	sizeof(bool), 
-	0, 
-	0 
-};
-
-const member_definition members_of_buffer_t[] = 
-{
-	{"size", MetaType_u64, OFFSET_OF(buffer_t, size), 0}, 
-	{"data", MetaType_u8, OFFSET_OF(buffer_t, data), MemberFlag_IsPointer}, 
-};
-
-const member_definition members_of_string_t[] = 
-{
-	{"size", MetaType_u32, OFFSET_OF(string_t, size), 0}, 
-	{"buffer", MetaType_buffer_t, OFFSET_OF(string_t, buffer), 0}, 
-};
-
-const member_definition members_of_game_data[] = 
-{
-	{"player_id", MetaType_u32, OFFSET_OF(game_data, player_id), 0}, 
-	{"player_name", MetaType_string_t, OFFSET_OF(game_data, player_name), MemberFlag_IsPointer}, 
-};
-
-const type_definition definition_of_buffer_t 
-{ 
-	"buffer_t",
-	12, 
-	sizeof(buffer_t), 
-	members_of_buffer_t, 
-	ArrayCount(members_of_buffer_t) 
-}; 
-
-const type_definition definition_of_string_t 
-{ 
-	"string_t",
-	13, 
-	sizeof(string_t), 
-	members_of_string_t, 
-	ArrayCount(members_of_string_t) 
-}; 
-
-const type_definition definition_of_game_data 
-{ 
-	"game_data",
-	14, 
-	sizeof(game_data), 
-	members_of_game_data, 
-	ArrayCount(members_of_game_data) 
-}; 
-
-
-const type_definition* all_type_definitions[] = 
-{
-	0, 
-	&definition_of_u8, 
-	&definition_of_u16, 
-	&definition_of_u32, 
-	&definition_of_u64, 
-	&definition_of_s8, 
-	&definition_of_s16, 
-	&definition_of_s32, 
-	&definition_of_s64, 
-	&definition_of_f32, 
-	&definition_of_f64, 
-	&definition_of_bool, 
-	
-	&definition_of_buffer_t, 
-	&definition_of_string_t, 
-	&definition_of_game_data, 
-};

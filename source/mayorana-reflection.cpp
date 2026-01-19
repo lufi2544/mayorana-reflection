@@ -7,6 +7,8 @@
 // Reflection files
 #include "reflection.h"
 
+#include "example.cpp"
+
 
 int main(int arg_num, char** args)
 {
