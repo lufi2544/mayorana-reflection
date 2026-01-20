@@ -26,6 +26,6 @@ call "../setup_cl_x64.bat"
 cl /Fe:%BINARY_NAME% %CFLAGS% -I%SRC_DIR% -I%TESTS_DIR% -I%MAYORANA_DIR% %MAIN_FILE% -D%FLAGS% /link /SUBSYSTEM:CONSOLE /nologo
 
 :: print the generated code to a file( we can do this more elegantly with the game files, but is fine ).
-%BINARY_NAME% > game_generated.h
+::%BINARY_NAME% > game_generated.h
 
 

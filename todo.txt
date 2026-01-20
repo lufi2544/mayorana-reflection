@@ -1,6 +1,15 @@
 
 ////// MY REFLECTION /////
 
+TODO:
+- Should we need the meta_type in the type_definition? since we have it already in the member definition.
+- Watch the Casey video and start implementing the printing and test in a small project. 
+- test reflection in the small project.	
+
+PROBLEMS:
+
+	- first thing we have to do is to parse Mayorana, once this is done, then continue with the other project files.
+
 Parsing properties:
 - Just reflect the properties with MY_PROPERTY() identifier.
 - Should we reflect constexpr, const or static members?
@@ -9,12 +18,22 @@ After implementation:
 - add the types to reflect dynamically, so I don't have to add them by hand every time.
 - then validation for the types to make sense, and to check if the type is reflected and all that.
 
+///// METADATA GENEARATION 
+	- discuss how to print the different types.
 
 I would like to somehow on the projects:
-- to first, mark the properties as REFLECTED.
-- create metadata ONLY from reflected properties.
-- we have all the reflected properties, then we create the MetadataEnum.
-- then:
+	- maybe generating all the types_definition for the struct first and then the member definition?
+	- flags for pointer reference.
+	- parse number in the tokenizer.
+	- enum name iterator.
 	- field iterator
-	- print default way a struct per project, this can be done in the proejct itself to by default print the project types.
-	- property validation.
+	- pointer handling
+	- buffer_t implementation.
+
+
+
+
+TESTS:
+	- test wiht a ptr of a type, like a u64 or something.
+	- test with a ptr of a primitive mayorana class.
+

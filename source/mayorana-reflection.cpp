@@ -4,8 +4,10 @@
 #define MAYORANA_DISABLE_LOGS
 #include "mayorana.h"
 
-// Reflection project files
+// Reflection files
 #include "reflection.h"
+
+#include "example.cpp"
 
 
 int main(int arg_num, char** args)
@@ -14,7 +16,14 @@ int main(int arg_num, char** args)
 	
 	SCRATCH();
 	
-	buffer_t file_buffer = read_file_and_add_null_at_end(temp_arena, "game.h");
+	
+	string_t name = STRING_V(temp_arena, "ishak");
+	u32 player_id = 32;
+	
+	game_data game = { &name, player_id };		
+	print_struct("main_game_data", all_type_definitions, ArrayCount(all_type_definitions), &definition_of_game_data, &game);
+	
+	buffer_t file_buffer = read_file_and_add_null_at_end(temp_arena, "mayorana.h");
 	tokenizer this_tokenizer = {};
 	this_tokenizer.at = (char*)file_buffer.data;
 	
@@ -24,6 +33,8 @@ int main(int arg_num, char** args)
 		return 1;
 	}
 	
+	
+	// In this step we get the relevant data from the code, so we can create a node list to later on create the generated data to a file for reflection.
 	bool parsing = true;
 	while(parsing)
 	{
@@ -58,5 +69,24 @@ int main(int arg_num, char** args)
 	}
 	
 	
-	return 0;
-}
+	// Once the data is gathered, we generate it here in the correct oreder.
+	generate_meta_enum_for_reflected();
+	generate_basic_types_definition();
+	generate_member_definition_for_reflected();
+	generate_type_definition_for_reflected();
+	generate_type_definition_table();
+	
+	
+	
+	/*	const type_definition* def = get_type_definition(all_type_definitions, ArrayCount(all_type_definitions), MetaType_buffer_t);
+		if(def)
+		{
+			printf("META_TYPE: %i", def->meta_type);
+			
+		}
+	
+*/
+		
+		
+		return 0;
+	}

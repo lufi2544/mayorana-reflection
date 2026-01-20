@@ -1,6 +1,7 @@
 /* date = January 8th 2026 7:19 pm */
 
 #include "reflection_includes.h"
+#include <cstring>
 
 //////////////////////
 /*
@@ -9,6 +10,60 @@
 */
 //////////////////////
 
+//////////////
+// Basic types the the reflection system supports
+// IMPORTANT: This has to be equal to the primitive_meta_type enum @see: reflection_includes.h, since the fields has to match, we need to know about this primitives at this libs compile time
+// to generically know how to print "mayorana.h" primitives and data structures.
+//
+char* basic_meta_types [] = 
+{
+	"u8", 
+	"u16", 
+	"u32", 
+	"u64", 
+	"s8", 
+	"s16", 
+	"s32", 
+	"s64", 
+	"f32", 
+	"f64", 
+	"bool", 
+};
+
+struct member_node
+{
+	char* type;
+	char* name;
+	u32 flags;
+	
+	member_node *next;
+};
+
+/// linked list to generate the ClassMeta_enum
+struct meta_node
+{
+	char* name;
+	member_node *member;
+	
+	meta_node* next;
+	meta_node* prev;
+};
+
+meta_node* current_meta_node;
+u32 meta_idx_counter = 0;
+
+/////////////
+
+struct flag_name
+{
+	u32 flag;
+	const char *name;
+};
+
+global const flag_name MemberFlagNames[] =
+{
+	{ MemberFlag_IsPointer, "MemberFlag_IsPointer" },
+};
 
 enum enum_token_type
 {
@@ -29,6 +84,7 @@ enum enum_token_type
 	
 	Token_EndOfStream,
 };
+
 
 struct token
 {
@@ -65,7 +121,7 @@ print_struct(u32 _member_count, member_definition *_struct_definition, void *str
 		member_definition *member = _struct_definition + member_idx;
 		char text_buffer[256];
 		text_buffer[0] = 0;
-		swtict(member->type)
+		swtich(member->type)
 		{
 			case Metatype_u32:
 			{
@@ -139,7 +195,7 @@ token_is_reflected(token _token)
 }
 
 internal_f bool 
-token_is_property_reflection(token _token)
+token_is_property_reflected(token _token)
 {
 	bool result = token_equals(_token, "MY_PROPERTY");
 	return result;
@@ -188,7 +244,7 @@ parsing_move_to(tokenizer *_tokenizer, enum_token_type target_token)
 			break;
 		}
 	}
-		
+	
 	if(moving)
 	{
 		fprintf(stderr, "ERROR: tried to go to %d token type but failed", target_token);
@@ -223,55 +279,117 @@ skip_member(tokenizer *_tokenizer)
 	parsing_move_to(_tokenizer, Token_Semicolon);
 }
 
-/**
-* We don't support static const reflection, since I think it does not make sense for now? I have to investigate.
-*/
 internal_f void
-parse_member(tokenizer *_tokenizer, token _struct_token, token _member_type_token)
+get_member_flags_string(u32 flags, char *buffer)
 {
-	bool is_pointer = false;
-	bool parsing = true;
-	while(parsing)
+	buffer[0] = 0;
+	char *at = buffer;
+	
+	for(int i = 0;
+		i < ArrayCount(MemberFlagNames);
+		++i)
 	{
-		token this_token = get_token(_tokenizer);
-		
-		if((token_equals(this_token, "static")) ||
-		   (token_equals(this_token, "const")) || 
-		   (token_equals(this_token, "constexpr")))
+		if(flags & MemberFlagNames[i].flag)
 		{
-			// baiscally if we encounter one of this identifers, we just return sice we are not parsing: "static", "consts" or "constexpr"
-			parsing = false;
-			skip_member(_tokenizer);
-			break;
-		}
-		
-		switch(this_token.type)
-		{			
-			case Token_Asterisk:
+			if(at != buffer)
 			{
-				is_pointer = true;				
-				
-			}break;
+				strcat(at, " || ");
+			}
 			
-			case Token_Identifier:
-			{
-				printf("{MetaType_%.*s, \"%.*s\", (u32)&((%.*s *)0)->%.*s}, \n",
-					   _member_type_token.text_len, _member_type_token.text,
-					   this_token.text_len, this_token.text, 
-					   _struct_token.text_len, _struct_token.text, 
-					    this_token.text_len, this_token.text);
-				
-			}break;
-			
-			case Token_Semicolon:
-			case Token_EndOfStream:
-			{
-				parsing = false;
-				
-			}break;
-			
+			strcat(at, MemberFlagNames[i].name);
 		}
 	}
+}
+
+
+// TODO: Change this to Parsing or somethig
+internal_f void
+generate_member_definition(tokenizer *_tokenizer, token _struct_type_token, meta_node *_struct_meta)
+{	
+	for(;;)
+	{
+		token this_token = get_token(_tokenizer);
+		if(this_token.type == Token_CloseBraces)
+		{
+			break;
+		}
+		else
+		{
+			// Checking if the token we are about to parse is reflected, if it is, then we parse it
+			if(token_is_property_reflected(this_token))
+			{
+				// getting the token type token in here.
+				parse_member_params(_tokenizer);
+				
+				token member_type_token = get_token(_tokenizer);
+				
+				u32 member_flags = 0;
+				bool parsing = true;
+				while(parsing)
+				{
+					token this_token = get_token(_tokenizer);
+					
+					if((token_equals(this_token, "static")) ||
+					   (token_equals(this_token, "const")) || 
+					   (token_equals(this_token, "constexpr")))
+					{
+						// baiscally if we encounter one of this identifers, we just return sice we are not parsing: "static", "consts" or "constexpr"
+						parsing = false;
+						skip_member(_tokenizer);
+						break;
+					}
+					
+					switch(this_token.type)
+					{			
+						case Token_Asterisk:
+						{
+							member_flags |= MemberFlag_IsPointer;						
+						}break;
+						
+						case Token_Identifier:
+						{
+														
+							// name cpy
+							member_node *this_member = (member_node*)malloc(sizeof(member_node));
+							this_member->next = 0;
+							this_member->name = (char*)malloc(this_token.text_len + 1);
+							snprintf(this_member->name, this_token.text_len + 1, "%s", this_token.text);
+							
+							
+							// type cpy
+							this_member->type = (char*)malloc(member_type_token.text_len + 1);
+							snprintf(this_member->type, member_type_token.text_len + 1, "%s", member_type_token.text);
+							
+							this_member->flags = member_flags;							
+							
+							if(_struct_meta)
+							{
+								member_node *current_membe_node = _struct_meta->member;
+								
+								if(current_membe_node)
+								{
+									this_member->next = current_membe_node;
+								}
+								
+								_struct_meta->member = this_member;								
+							}
+							
+							
+						}break;
+						
+						case Token_Semicolon:
+						case Token_EndOfStream:
+						{
+							parsing = false;
+							
+						}break;
+						
+					}
+				}													
+			}
+		}
+	}	
+	
 }
 
 // TODO: in the future we will set this to be serializable only the MY_PROPERTY() fields
@@ -280,33 +398,31 @@ parse_struct(tokenizer *_tokenizer)
 {
 	token struct_type_token = get_token(_tokenizer);
 	
+	
+	// Meta type enum generation
+	meta_node* new_meta_node = new meta_node();
+	new_meta_node->next = 0;
+	new_meta_node->prev = current_meta_node;
+	new_meta_node->name = (char*)malloc(struct_type_token.text_len + 1);
+	new_meta_node->name[0] = 0;
+	memcpy(new_meta_node->name, struct_type_token.text, struct_type_token.text_len);
+	new_meta_node->name[struct_type_token.text_len] = 0;
+	
+	if(!current_meta_node)
+	{
+		current_meta_node = new_meta_node;
+	}
+	else
+	{
+		current_meta_node->next = new_meta_node;
+		current_meta_node = new_meta_node;
+	}
+	
 	if(require_token(_tokenizer, Token_OpenBraces))
 	{
-		printf("member_definition *members_of_%.*s[] = \n", struct_type_token.text_len, struct_type_token.text);
-		printf("{\n");
-		for(;;)
-		{
-			token this_token = get_token(_tokenizer);			
-			if(this_token.type == Token_CloseBraces)
-			{
-				break;
-			}
-			else
-			{
-				// Checking if the token we are about to parse is reflected, if it is, then we parse it
-				if(token_is_property_reflection(this_token))
-				{
-					// getting the token type token in here.
-					parse_member_params(_tokenizer);
-					
-					token member_type_token = get_token(_tokenizer);
-					parse_member(_tokenizer, struct_type_token, member_type_token);
-					
-				}
-			}
-		}
-		
-		printf("};\n");
+		// generating the member definitio and the type definition for this struct
+		generate_member_definition(_tokenizer, struct_type_token, current_meta_node);
+		//generate_type_definition(_tokenizer, struct_type_token);
 	}
 }
 
@@ -497,6 +613,208 @@ get_token(tokenizer *_tokenizer)
 		
 	}
 	
-			
 	return result;
 }
+
+internal_f void
+generate_type_definition_for(char *name, int idx)
+{
+	printf("const type_definition definition_of_%s = \n", name);
+	printf("{ \n");
+	printf("\"%s\", \n", name);
+	printf("sizeof(%s), \n", name);
+//	printf("%d, \n", idx);
+	printf("0, \n");
+	printf("0 \n");
+	printf("};\n");
+	printf("\n");
+}
+
+internal_f void
+generate_basic_types_definition()
+{	
+	// Type definition struct
+	for(int idx = 0;
+		idx < ArrayCount(basic_meta_types);
+		++idx)
+	{
+		char* type = basic_meta_types[idx];
+		generate_type_definition_for(type, idx + 1 /* we add up 1 as the 0 is MetaType_None */);
+	}
+}
+
+internal_f void
+generate_meta_enum_for(char *name)
+{
+	printf("MetaType_%s, \n", name);
+}
+
+internal_f void
+generate_basic_types_meta()
+{
+	
+	// MetaType enum definition.
+	for(int idx = 0;
+		idx < ArrayCount(basic_meta_types);
+		++idx)
+	{
+		char* type = basic_meta_types[idx];
+		generate_meta_enum_for(type);
+	}
+}
+
+internal_f void
+generate_basic_types_meta_type()
+{
+	for(int idx = 0;
+		idx < ArrayCount(basic_meta_types);
+		++idx)
+	{
+		char* type = basic_meta_types[idx];
+		generate_meta_enum_for(type);
+	}
+}
+
+meta_node* first_meta_node = 0;
+
+global_f void
+generate_meta_enum_for_reflected()
+{
+	if(!current_meta_node)
+	{
+		return;
+	}
+		
+	printf("\n");
+	printf("enum meta_type : u32 \n");
+	printf("{\n");
+	printf("MetaType_none, \n");	
+		
+	generate_basic_types_meta();
+	
+	// going back in he list to the first element to recreate the enum in the correct order
+	meta_node* first_node = 0;
+	
+	for(meta_node* node_idx = current_meta_node; 
+		node_idx;
+		node_idx = node_idx->prev)
+	{
+		first_node = node_idx;
+	}
+	
+	// first meta_node caching
+	first_meta_node = first_node;
+	
+	printf("\n");
+		
+	for(meta_node* node_idx = first_node;
+		node_idx; 
+		node_idx = node_idx->next)
+	{
+		printf("MetaType_%s, \n", node_idx->name);
+	}
+	
+	printf("MetaType_num \n");
+	printf("}; \n");
+	printf("\n");
+}
+
+internal_f void
+generate_member_definition_for_reflected()
+{
+	if(!first_meta_node)
+	{
+		return;
+	}
+	
+		
+	for(meta_node *node_idx = first_meta_node;
+		node_idx;
+		node_idx = node_idx->next)
+	{
+		
+		printf("const member_definition members_of_%s[] = \n", node_idx->name);
+		printf("{\n");
+		for(member_node *member_idx = node_idx->member;
+			member_idx;
+			member_idx = member_idx->next)
+		{
+			char member_flags_string [256];
+			member_flags_string[0] = 0;			
+			get_member_flags_string(member_idx->flags, member_flags_string);
+			
+			printf("{\"%s\", MetaType_%s, OFFSET_OF(%s, %s), %s}, \n",
+				   member_idx->name,
+				   member_idx->type,
+				   node_idx->name,
+				   member_idx->name,
+				   member_flags_string[0] != 0 ? member_flags_string : "0");
+		}
+		
+		printf("};\n");
+		printf("\n");	
+	}
+	
+
+}
+
+internal_f void
+generate_type_definition_for_reflected()
+{
+	if(!first_meta_node)
+	{
+		return;
+	}
+	
+	for(meta_node *idx = first_meta_node;
+		idx;
+		idx = idx->next)
+	{
+		printf("const type_definition definition_of_%s \n", idx->name);
+		printf("{ \n");			
+		printf(" \"%s\",\n", idx->name);
+		// the meta_type with the idx 0 is the MetaType_none, so we start at 1.
+		u32 current_meta_idx = (++meta_idx_counter + ArrayCount(basic_meta_types));
+//		printf("%d, \n", current_meta_idx);
+		printf("sizeof(%s), \n", idx->name);
+		printf("members_of_%s, \n", idx->name);
+		printf("ArrayCount(members_of_%s) \n", idx->name);				
+		
+		printf("}; \n");
+		printf("\n");
+	}
+}
+
+
+//  we will have a table that for getting a certain type and access its members, we will have to check against the enum MetaType_xxx assigned to it.
+internal_f void
+generate_type_definition_table()
+{
+	printf("\n");
+	
+	printf("const type_definition* all_type_definitions[] = \n");
+	printf("{\n");
+	
+	printf("0, \n");
+	// Filll the array with the basic types
+	for(u32 idx = 0; 
+		idx < ArrayCount(basic_meta_types);
+		++idx)
+	{
+		const char* basic_type = basic_meta_types[idx];
+		printf("&definition_of_%s, \n", basic_type);
+	}
+	
+	printf("\n");
+	
+	// Custom struct types
+	for(meta_node *idx = first_meta_node;
+		idx;
+		idx = idx->next)
+	{
+		printf("&definition_of_%s, \n", idx->name);
+	}
+	
+	printf("};\n");
+}
+
