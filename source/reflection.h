@@ -334,7 +334,7 @@ generate_member_definition(tokenizer *_tokenizer, token _struct_type_token, meta
 		}
 		else
 		{
-			// Checking if the token we are about to parse is reflected, if it is, then we parse it
+			// Checking if the field is reflected MY_PROPERTY 
 			if(token_is_property_reflected(this_token))
 			{
 				// getting the token type token in here.

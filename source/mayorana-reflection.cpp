@@ -24,10 +24,8 @@ TestFlag_None3	,
 int main(int arg_num, char** args)
 {
 	mayorana_init();
-	
-	
-	
-	SCRATCH();
+			
+	SCRATCH();	
 	
 	string_t name = STRING_V(temp_arena, "ishak");
 	u32 player_id = 32;

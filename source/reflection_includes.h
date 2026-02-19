@@ -111,11 +111,28 @@ print_enum_value(char *member_name, u32 member_value, const type_definition *enu
 }
 
 
-global_f char* 
-get_enum_field_name(u32 field_value)
-{
+global_f char*
+get_enum_value_string(u32 enum_value, const type_definition *enum_definition)
+{	
+	if(enum_value > enum_definition->member_count)
+	{
+		return 0;
+	}
 	
+	for(u32 member_idx = 0;
+		member_idx < enum_definition->member_count;
+		++member_idx)		
+	{
+		if(member_idx == enum_value)
+		{						
+			const member_definition *this_member_definition = enum_definition->members + member_idx;
+			return this_member_definition->name;
+		}				
+	}				
+	
+	return 0;
 }
+
 
 global_f void
 print_struct(char *struct_name, const type_definition **type_table, u32 type_table_size, const type_definition *struct_definition, void *struct_ptr)
@@ -134,8 +151,8 @@ print_struct(char *struct_name, const type_definition **type_table, u32 type_tab
 		member_idx <  struct_definition->member_count;
 		++member_idx)		
 	{				
-		const member_definition *this_member_definition = struct_definition->members + member_idx;		
-		const type_definition * this_member_type = get_type_definition(type_table, type_table_size, this_member_definition->meta_type);
+		const member_definition *this_member_definition = struct_definition->members + member_idx;
+		const type_definition *this_member_type = get_type_definition(type_table, type_table_size, this_member_definition->meta_type);
 		
 		
 		u8* struct_address = (u8*)struct_ptr;
