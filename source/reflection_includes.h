@@ -267,3 +267,6 @@ print_struct(char *struct_name, const type_definition **type_table, u32 type_tab
 #define MY_PRINT_STRUCT(debug_name, struct_name, ptr) \
 print_struct(debug_name, all_type_definitions, ArrayCount(all_type_definitions), &GLUE(definition_of_, struct_name), ptr);
 
+#define MY_ENUM_VALUE(enum_name, value) \
+get_enum_value_string(value, &GLUE(definition_of_, enum_name));
+

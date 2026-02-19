@@ -25,7 +25,12 @@ int main(int arg_num, char** args)
 {
 	mayorana_init();
 			
-	SCRATCH();	
+	SCRATCH();
+	
+	
+	char* enum_value = MY_ENUM_VALUE(enemy_type, 2);
+	
+	printf("PEPE %s \n", enum_value);
 	
 	string_t name = STRING_V(temp_arena, "ishak");
 	u32 player_id = 32;
