@@ -47,6 +47,11 @@ struct meta_node
 	
 	meta_node* next;
 	meta_node* prev;
+	
+	u32 flags;
+	
+	// Special for Enums
+	char* size_string;
 };
 
 
@@ -309,6 +314,13 @@ get_member_flags_string(u32 flags, char *buffer)
 }
 
 
+internal_f bool
+member_has_flag(member_node *node, member_flag flag)
+{
+	return node->flags & flag;
+}
+
+
 // TODO: Change this to Parsing or somethig
 internal_f void
 generate_member_definition(tokenizer *_tokenizer, token _struct_type_token, meta_node *_struct_meta)
@@ -410,16 +422,33 @@ generate_enum_type_definition(tokenizer *_tokenizer, token enum_type_token, meta
 	// we can support the :u32.. enums or not, for now we are flexible	
 	
 	bool b_default_enum_size = false;
+	char default_enum_type_size [3] = "u8";
 	if(!require_token(_tokenizer, Token_Colon))
 	{
 		printf( "Found an enum %s without the type definition : ", enum_type_token.text);		
 		b_default_enum_size = true;
+		
+		
+		u8 string_size = sizeof(default_enum_type_size);
+		_meta_node->size_string = (char*)malloc(string_size + 1);		
+		bytes_copy(_meta_node->size_string, default_enum_type_size, string_size + 1);
+		
+		_meta_node->size_string[string_size] = 0;
 	}
 	
-	char default_enum_type_size [3] = "u8";
 	
 	// mabye for later sizeof(token_type)
 	token enum_size_token = get_token(_tokenizer);
+	
+	if(!b_default_enum_size)
+	{
+		_meta_node->size_string = (char*)malloc(enum_size_token.text_len + 1);
+		_meta_node->size_string[0] = 0;		
+		bytes_copy(_meta_node->size_string, default_enum_type_size, enum_size_token.text_len + 1);
+		
+		_meta_node->size_string[enum_size_token.text_len] = 0;
+	}
+		
 	
 	
 	bool parsing = true;
@@ -497,6 +526,8 @@ parse_enum(tokenizer *this_tokenizer)
 	token enum_type_token = get_token(this_tokenizer);
 	
 	meta_node* new_meta_node = new meta_node();
+	new_meta_node->flags = 0;
+	new_meta_node->size_string = 0;
 	new_meta_node->next = 0;
 	new_meta_node->prev = current_meta_node;
 	new_meta_node->name = (char*)malloc(enum_type_token.text_len + 1);
@@ -529,6 +560,8 @@ parse_struct(tokenizer *_tokenizer)
 	
 	// Meta type enum generation
 	meta_node* new_meta_node = new meta_node();
+	new_meta_node->flags = 0;
+	new_meta_node->size_string = 0;
 	new_meta_node->next = 0;
 	new_meta_node->prev = current_meta_node;
 	new_meta_node->name = (char*)malloc(struct_type_token.text_len + 1);
@@ -885,20 +918,37 @@ generate_member_definition_for_reflected()
 		
 		printf("const member_definition members_of_%s[] = \n", node_idx->name);
 		printf("{\n");
+		
+		u32 member_node_idx = 0;
 		for(member_node *member_idx = first_node;
 			member_idx;
-			member_idx = member_idx->next)
+			member_idx = member_idx->next, ++member_node_idx)
 		{
 			char member_flags_string [256];
 			member_flags_string[0] = 0;			
 			get_member_flags_string(member_idx->flags, member_flags_string);
 			
-			printf("{\"%s\", MetaType_%s, OFFSET_OF(%s, %s), %s}, \n",
-				   member_idx->name,
-				   member_idx->type,
-				   node_idx->name,
-				   member_idx->name,
-				   member_flags_string[0] != 0 ? member_flags_string : "0");
+			
+			if(member_has_flag(member_idx, MemberFlag_IsEnumField))
+			{
+				
+				printf("{\"%s\", MetaType_%s, %i, %s}, \n",
+					   member_idx->name,
+					   member_idx->type,
+					   member_node_idx,
+					   member_flags_string[0] != 0 ? member_flags_string : "0");
+			}
+			else				
+			{
+				
+				printf("{\"%s\", MetaType_%s, OFFSET_OF(%s, %s), %s}, \n",
+					   member_idx->name,
+					   member_idx->type,
+					   node_idx->name,
+					   member_idx->name,
+					   member_flags_string[0] != 0 ? member_flags_string : "0");
+			}
+
 		}
 		
 		printf("};\n");
@@ -926,7 +976,7 @@ generate_type_definition_for_reflected()
 		// the meta_type with the idx 0 is the MetaType_none, so we start at 1.
 		u32 current_meta_idx = (++meta_idx_counter + ArrayCount(basic_meta_types));
 		//		printf("%d, \n", current_meta_idx);
-		printf("sizeof(%s), \n", idx->name);
+		printf("sizeof(%s), \n", idx->size_string ? idx->size_string : idx->name);
 		printf("members_of_%s, \n", idx->name);
 		printf("ArrayCount(members_of_%s) \n", idx->name);				
 		

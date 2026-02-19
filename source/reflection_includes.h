@@ -54,11 +54,6 @@ struct member_definition
 	u32 flags;
 };
 
-struct enum_definition
-{
-	u32 meta_type; // this will be the idx on the enums definition table
-};
-
 struct type_definition
 {
 	char* name;
@@ -81,20 +76,43 @@ enum member_flag : u32
 
 // TODO: should we pass the size for the table here?
 global_f const type_definition*
-get_type_definition(const type_definition** types_definition_table, u32 table_size, u32 meta_type)
+get_type_definition(const type_definition** types_definition_table, u32 table_size, u32 _meta_type)
 {
 	if((!types_definition_table) || 
-	   (table_size <= (meta_type)))
+	   (table_size <= (_meta_type)))
 	{
 		return 0;
 	}
-	const type_definition* result = types_definition_table[meta_type];	
+	const type_definition* result = types_definition_table[_meta_type];	
 	return result;
 } 
 
 
 global_f void
-print_enum(char *enum_name)
+print_enum_value(char *member_name, u32 member_value, const type_definition *enum_definition)
+{	
+	if(member_value > enum_definition->member_count)
+	{
+		return;
+	}
+	
+	for(u32 member_idx = 0;
+		member_idx < enum_definition->member_count;
+		++member_idx)		
+	{
+		if(member_idx == member_value)
+		{						
+			const member_definition *this_member_definition = enum_definition->members + member_idx;
+			printf("%s : %s", member_name, this_member_definition->name);			
+		}				
+	}				
+	
+	printf("} \n");
+}
+
+
+global_f char* 
+get_enum_field_name(u32 field_value)
 {
 	
 }
@@ -113,14 +131,24 @@ print_struct(char *struct_name, const type_definition **type_table, u32 type_tab
 	}
 	
 	for(u32 member_idx = 0;
-		member_idx < struct_definition->member_count;
+		member_idx <  struct_definition->member_count;
 		++member_idx)		
 	{				
 		const member_definition *this_member_definition = struct_definition->members + member_idx;		
 		const type_definition * this_member_type = get_type_definition(type_table, type_table_size, this_member_definition->meta_type);
 		
+		
 		u8* struct_address = (u8*)struct_ptr;
 		u8* member_ptr = struct_address + this_member_definition->offset;
+		
+		if(this_member_definition->flags & MemberFlag_IsEnum)
+		{
+			// TODO: Maybe encoding the size somewhere so we can cast to the proper size here.
+			u32* enum_field_value = (u32*)member_ptr;
+			print_enum_value(this_member_definition->name, *enum_field_value, this_member_type);
+			continue;
+		}
+		
 		
 		// Dereferencing a ptr in this case, so we treat the ptr passed to this function as a ** .
 		if(this_member_definition->flags & MemberFlag_IsPointer)
@@ -130,8 +158,8 @@ print_struct(char *struct_name, const type_definition **type_table, u32 type_tab
 			member_ptr = real_ptr;
 		}
 		
-		primitive_meta_type meta_type = (primitive_meta_type)this_member_definition->meta_type;
-		switch(meta_type)
+		primitive_meta_type this_meta_type = (primitive_meta_type)this_member_definition->meta_type;
+		switch(this_meta_type)
 		{							
 			// TODO: Make sure if any reflected native type is added, we inticate that.
 			case PrimitiveType_u8:

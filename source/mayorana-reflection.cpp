@@ -34,6 +34,8 @@ int main(int arg_num, char** args)
 	
 	game_data game = { &name, player_id };
 	
+	game.m_enemy_type = EnemyType_dragon;
+	
 	MY_PRINT_STRUCT("main_game_data", game_data, &game);
 	
 	buffer_t file_buffer = read_file_and_add_null_at_end(temp_arena, "game.h");

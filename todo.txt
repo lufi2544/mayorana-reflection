@@ -2,6 +2,10 @@
 ////// MY REFLECTION /////
 
 TODO:
+
+ENUM REFLECTION:
+	- encode the size of the enum somewhere, maybe in the meta_type? so we can cast to the proper value when printed.
+
 - Should we need the meta_type in the type_definition? since we have it already in the member definition.
 - Watch the Casey video and start implementing the printing and test in a small project. 
 - test reflection in the small project.	
