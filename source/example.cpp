@@ -1,5 +1,15 @@
 
 
+MY_ENUM()
+enum enemy_type : u32
+{
+	
+	EnemyType_none,
+	EnemyType_trol,
+	EnemyType_dragon,
+	EnemyType_soldier,	
+};
+
 
 MY_STRUCT()
 struct game_data
@@ -9,6 +19,9 @@ struct game_data
 	
 	MY_PROPERTY()
 		u32 player_id;
+	
+	MY_PROPERTY(enum)
+		enemy_type m_enemy_type;
 };
 
 
@@ -30,6 +43,7 @@ enum meta_type : u32
 	MetaType_buffer_t, 
 	MetaType_string_t, 
 	MetaType_game_data, 
+	MetaType_enum_enemy_types,
 	MetaType_num 
 }; 
 
@@ -137,7 +151,17 @@ const member_definition members_of_game_data[] =
 {
 	{"player_id", MetaType_u32, OFFSET_OF(game_data, player_id), 0}, 
 	{"player_name", MetaType_string_t, OFFSET_OF(game_data, player_name), MemberFlag_IsPointer}, 
+//	{"enemy_type", MetaType_enum_enemy_types, OFFSET_OF(game_data, enemy_type), MemberFlag_IsEnum}, 
 };
+
+
+const member_definition members_of_enum_enemy_types[] = 
+{
+	{"enemy_trol", MetaType_u32, 0, MemberFlag_IsEnumField}, 
+	{"enemy_player", MetaType_u32, 1, MemberFlag_IsEnumField}, 
+	{"enemy_dragon", MetaType_u32, 2, MemberFlag_IsEnumField}, 
+};
+
 
 const type_definition definition_of_buffer_t 
 { 
@@ -145,7 +169,7 @@ const type_definition definition_of_buffer_t
 	sizeof(buffer_t), 
 	members_of_buffer_t, 
 	ArrayCount(members_of_buffer_t) 
-}; 
+};
 
 const type_definition definition_of_string_t 
 { 
@@ -153,7 +177,7 @@ const type_definition definition_of_string_t
 	sizeof(string_t), 
 	members_of_string_t, 
 	ArrayCount(members_of_string_t) 
-}; 
+};
 
 const type_definition definition_of_game_data 
 { 
@@ -161,8 +185,16 @@ const type_definition definition_of_game_data
 	sizeof(game_data), 
 	members_of_game_data, 
 	ArrayCount(members_of_game_data) 
-}; 
+};
 
+
+const type_definition definition_of_enum_enemy_types =
+{	
+	"enum_enemy_types",
+	sizeof(u32),
+	members_of_enum_enemy_types,
+	ArrayCount(members_of_enum_enemy_types)
+};
 
 const type_definition* all_type_definitions[] = 
 {
@@ -182,4 +214,5 @@ const type_definition* all_type_definitions[] =
 	&definition_of_buffer_t, 
 	&definition_of_string_t, 
 	&definition_of_game_data, 
+	&definition_of_enum_enemy_types,
 };

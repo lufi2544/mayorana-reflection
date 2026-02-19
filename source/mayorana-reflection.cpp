@@ -9,21 +9,34 @@
 
 #include "example.cpp"
 
+#define MY_PRINT_STRUCT(debug_name, struct_name, ptr) \
+print_struct(debug_name, all_type_definitions, ArrayCount(all_type_definitions), &GLUE(definition_of_, struct_name), ptr);
+
+
+enum class test_enum : u32
+{
+TestFlag_None	,
+TestFlag_None1	,
+TestFlag_None2	,
+TestFlag_None3	,
+};
 
 int main(int arg_num, char** args)
 {
 	mayorana_init();
 	
-	SCRATCH();
 	
+	
+	SCRATCH();
 	
 	string_t name = STRING_V(temp_arena, "ishak");
 	u32 player_id = 32;
 	
-	game_data game = { &name, player_id };		
-	print_struct("main_game_data", all_type_definitions, ArrayCount(all_type_definitions), &definition_of_game_data, &game);
+	game_data game = { &name, player_id };
 	
-	buffer_t file_buffer = read_file_and_add_null_at_end(temp_arena, "mayorana.h");
+	MY_PRINT_STRUCT("main_game_data", game_data, &game);
+	
+	buffer_t file_buffer = read_file_and_add_null_at_end(temp_arena, "game.h");
 	tokenizer this_tokenizer = {};
 	this_tokenizer.at = (char*)file_buffer.data;
 	

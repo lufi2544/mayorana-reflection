@@ -27,7 +27,7 @@ char* basic_meta_types [] =
 	"s64", 
 	"f32", 
 	"f64", 
-	"bool", 
+	"bool",	
 };
 
 struct member_node
@@ -49,7 +49,8 @@ struct meta_node
 	meta_node* prev;
 };
 
-meta_node* current_meta_node;
+
+meta_node* current_meta_node; // this is the node that we will use to create the enum for all the MetaTypes later on when finished parsing.
 u32 meta_idx_counter = 0;
 
 /////////////
@@ -63,6 +64,8 @@ struct flag_name
 global const flag_name MemberFlagNames[] =
 {
 	{ MemberFlag_IsPointer, "MemberFlag_IsPointer" },
+	{ MemberFlag_IsEnum, "MemberFlag_IsEnum" },
+	{ MemberFlag_IsEnumField, "MemberFlag_IsEnumField" },
 };
 
 enum enum_token_type
@@ -70,6 +73,7 @@ enum enum_token_type
 	Token_Unknown,
 	
 	Token_OpenParen,
+	Token_Coma,
 	Token_Colon,
 	Token_CloseParen,
 	Token_Semicolon,
@@ -232,7 +236,7 @@ parse_reflection_params(tokenizer *_tokenizer)
 
 
 internal_f void 
-parsing_move_to(tokenizer *_tokenizer, enum_token_type target_token)
+tokenizer_move_to(tokenizer *_tokenizer, enum_token_type target_token)
 {
 	bool moving = true;
 	while((_tokenizer->at != 0) && (moving))
@@ -253,7 +257,7 @@ parsing_move_to(tokenizer *_tokenizer, enum_token_type target_token)
 
 
 internal_f void
-parse_member_params(tokenizer *tokenizer)
+parse_member_params(tokenizer *tokenizer, u32 *member_flags)
 {
 	for(;;)
 	{
@@ -266,7 +270,10 @@ parse_member_params(tokenizer *tokenizer)
 		else if(this_token.type == Token_Identifier)
 		{
 			// params parsing here
-			
+			if(token_equals(this_token, "enum"))
+			{
+				(*member_flags) |= MemberFlag_IsEnum;
+			}
 			
 		}
 	}
@@ -276,7 +283,7 @@ parse_member_params(tokenizer *tokenizer)
 internal_f void 
 skip_member(tokenizer *_tokenizer)
 {
-	parsing_move_to(_tokenizer, Token_Semicolon);
+	tokenizer_move_to(_tokenizer, Token_Semicolon);
 }
 
 internal_f void
@@ -319,11 +326,11 @@ generate_member_definition(tokenizer *_tokenizer, token _struct_type_token, meta
 			if(token_is_property_reflected(this_token))
 			{
 				// getting the token type token in here.
-				parse_member_params(_tokenizer);
+				u32 member_flags = 0;
+				parse_member_params(_tokenizer, &member_flags);
 				
 				token member_type_token = get_token(_tokenizer);
 				
-				u32 member_flags = 0;
 				bool parsing = true;
 				while(parsing)
 				{
@@ -343,9 +350,12 @@ generate_member_definition(tokenizer *_tokenizer, token _struct_type_token, meta
 					{			
 						case Token_Asterisk:
 						{
-							member_flags |= MemberFlag_IsPointer;						
+							member_flags |= MemberFlag_IsPointer;
+							
 						}break;
 						
+						
+						// MEMBER NODE ORDER IN MEMORY: member3->member2->member1
 						case Token_Identifier:
 						{
 														
@@ -392,6 +402,124 @@ generate_member_definition(tokenizer *_tokenizer, token _struct_type_token, meta
 	
 }
 
+
+// TODO: Change this to Parsing or somethig
+internal_f void
+generate_enum_type_definition(tokenizer *_tokenizer, token enum_type_token, meta_node *_meta_node)
+{	
+	// we can support the :u32.. enums or not, for now we are flexible	
+	
+	bool b_default_enum_size = false;
+	if(!require_token(_tokenizer, Token_Colon))
+	{
+		printf( "Found an enum %s without the type definition : ", enum_type_token.text);		
+		b_default_enum_size = true;
+	}
+	
+	char default_enum_type_size [3] = "u8";
+	
+	// mabye for later sizeof(token_type)
+	token enum_size_token = get_token(_tokenizer);
+	
+	
+	bool parsing = true;
+	while(parsing)
+	{
+		token this_token = get_token(_tokenizer);
+		if(this_token.type == Token_CloseBraces)
+		{
+			parsing = false;
+			break;
+		}
+		else
+		{			
+			// Checking if the token we are about to parse is reflected, if it is, then we parse it
+			
+			// getting the token type token in here.
+			u32 member_flags = 0;
+						
+			// TODO: add member metadata.
+			//	parse_member_params(_tokenizer, &member_flags);								
+			switch(this_token.type)
+			{															
+				// MEMBER NODE ORDER IN MEMORY: member3->member2->member1
+				case Token_Identifier:
+				{
+					
+					member_flags |= MemberFlag_IsEnumField;
+					// name cpy
+					member_node *this_member = (member_node*)malloc(sizeof(member_node));
+					this_member->next = 0;
+					this_member->name = (char*)malloc(this_token.text_len + 1);
+					snprintf(this_member->name, this_token.text_len + 1, "%s", this_token.text);
+					
+					
+					// this is the type of the current member of the enum, we will treat it as the same size as the enum size
+					this_member->type = (char*)malloc(b_default_enum_size ? sizeof(default_enum_type_size) : enum_type_token.text_len + 1);
+					
+					snprintf(this_member->type, 
+							 b_default_enum_size ? sizeof(default_enum_type_size) : enum_size_token.text_len + 1,
+							 "%s", 
+							 b_default_enum_size ? default_enum_type_size : enum_size_token.text);
+					
+					this_member->flags = member_flags;							
+					
+					if(_meta_node)
+					{
+						member_node *current_membe_node = _meta_node->member;
+						
+						if(current_membe_node)
+						{
+							this_member->next = current_membe_node;
+						}
+						
+						_meta_node->member = this_member;
+					}
+					
+					
+				}break;
+				
+				case Token_EndOfStream:
+				{
+					parsing = false;
+					
+				}break;				
+			}																			
+		}
+	}	
+	
+}
+
+
+internal_f void
+parse_enum(tokenizer *this_tokenizer)
+{
+	token enum_type_token = get_token(this_tokenizer);
+	
+	meta_node* new_meta_node = new meta_node();
+	new_meta_node->next = 0;
+	new_meta_node->prev = current_meta_node;
+	new_meta_node->name = (char*)malloc(enum_type_token.text_len + 1);
+	new_meta_node->name[0] = 0;
+	memcpy(new_meta_node->name, enum_type_token.text, enum_type_token.text_len);
+	new_meta_node->name[enum_type_token.text_len] = 0;
+	
+	if(!current_meta_node)
+	{
+		current_meta_node = new_meta_node;
+	}
+	else
+	{
+		current_meta_node->next = new_meta_node;
+		current_meta_node = new_meta_node;
+	}	
+	
+	generate_enum_type_definition(this_tokenizer, enum_type_token, current_meta_node);				
+}
+
+
+
+
 // TODO: in the future we will set this to be serializable only the MY_PROPERTY() fields
 internal_f void
 parse_struct(tokenizer *_tokenizer)
@@ -436,12 +564,19 @@ parse_reflected(tokenizer *_tokenizer)
 	if(require_token(_tokenizer, Token_OpenParen))
 	{
 		parse_reflection_params(_tokenizer);
+		
 		token type_token = get_token(_tokenizer);
+		
 		if(token_equals(type_token, "struct"))
 		{
 			parse_struct(_tokenizer);
 			
-		}else
+		}
+		else if(token_equals(type_token, "enum"))
+		{
+			parse_enum(_tokenizer);
+		}
+		else
 		{			
 			fprintf(stderr, "ERROR: Reflection is only supported for struct.");
 		}
@@ -565,6 +700,7 @@ get_token(tokenizer *_tokenizer)
 		case '*':{ result.type = Token_Asterisk; }break;
 		case ':':{ result.type = Token_Colon; }break;
 		case ';':{ result.type = Token_Semicolon; }break;
+		case ',':{ result.type = Token_Coma; }break;
 		
 		
 		case '"':
@@ -727,15 +863,29 @@ generate_member_definition_for_reflected()
 		return;
 	}
 	
-		
+	
 	for(meta_node *node_idx = first_meta_node;
 		node_idx;
 		node_idx = node_idx->next)
 	{
 		
+		// ordering the nodes by member as in memory
+		member_node* first_node = 0;
+		member_node* prev_member = 0;
+		
+		for(member_node* node = node_idx->member;
+			node; 
+			node = prev_member)
+		{
+			prev_member = node->next;
+			node->next = first_node;
+			first_node = node;						
+		}				
+		
+		
 		printf("const member_definition members_of_%s[] = \n", node_idx->name);
 		printf("{\n");
-		for(member_node *member_idx = node_idx->member;
+		for(member_node *member_idx = first_node;
 			member_idx;
 			member_idx = member_idx->next)
 		{
@@ -755,7 +905,7 @@ generate_member_definition_for_reflected()
 		printf("\n");	
 	}
 	
-
+	
 }
 
 internal_f void
@@ -775,7 +925,7 @@ generate_type_definition_for_reflected()
 		printf(" \"%s\",\n", idx->name);
 		// the meta_type with the idx 0 is the MetaType_none, so we start at 1.
 		u32 current_meta_idx = (++meta_idx_counter + ArrayCount(basic_meta_types));
-//		printf("%d, \n", current_meta_idx);
+		//		printf("%d, \n", current_meta_idx);
 		printf("sizeof(%s), \n", idx->name);
 		printf("members_of_%s, \n", idx->name);
 		printf("ArrayCount(members_of_%s) \n", idx->name);				

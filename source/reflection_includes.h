@@ -36,7 +36,8 @@ enum primitive_meta_type : u32
 	PrimitiveType_s64,
 	PrimitiveType_f32,
 	PrimitiveType_f64,
-	PrimitiveType_bool,	
+	PrimitiveType_bool,
+	
 	
 	PrimitiveType_buffer_t,		
 	PrimitiveType_string_t,	
@@ -53,6 +54,11 @@ struct member_definition
 	u32 flags;
 };
 
+struct enum_definition
+{
+	u32 meta_type; // this will be the idx on the enums definition table
+};
+
 struct type_definition
 {
 	char* name;
@@ -62,12 +68,12 @@ struct type_definition
 	u32 member_count;
 };
 
-
-
 enum member_flag : u32
 {		
 	MemberFlag_None = 0,
 	MemberFlag_IsPointer = 1 << 0,
+	MemberFlag_IsEnum = 1 << 1,
+	MemberFlag_IsEnumField = 1 << 2,
 		
 	MemberFlag_Num,
 };
@@ -86,6 +92,12 @@ get_type_definition(const type_definition** types_definition_table, u32 table_si
 	return result;
 } 
 
+
+global_f void
+print_enum(char *enum_name)
+{
+	
+}
 
 global_f void
 print_struct(char *struct_name, const type_definition **type_table, u32 type_table_size, const type_definition *struct_definition, void *struct_ptr)
@@ -146,38 +158,45 @@ print_struct(char *struct_name, const type_definition **type_table, u32 type_tab
 			}break;
 			
 			case PrimitiveType_s8:
-			{
-				
+			{				
+				s8* value = (s8*)member_ptr;
+				printf("%s: %d \n", this_member_definition->name, *value);	
 			}break;
 			
 			case PrimitiveType_s16:
 			{
-				
+				s16* value = (s16*)member_ptr;
+				printf("%s: %d \n", this_member_definition->name, *value);	
 			}break;
 			
 			case PrimitiveType_s32:
 			{
-				
+				s32* value = (s32*)member_ptr;
+				printf("%s: %d \n", this_member_definition->name, *value);	
 			}break;
 			
 			case PrimitiveType_s64:
 			{
-				
+				s64* value = (s64*)member_ptr;
+				printf("%s: %llu \n", this_member_definition->name, *value);	
 			}break;
 			
 			case PrimitiveType_f32:
 			{
-				
+				f32* value = (f32*)member_ptr;
+				printf("%s: %f \n", this_member_definition->name, *value);	
 			}break;
 			
 			case PrimitiveType_f64:
 			{
-				
+				f64* value = (f64*)member_ptr;
+				printf("%s: %f \n", this_member_definition->name, *value);	
 			}break;
 			
 			case PrimitiveType_bool:
 			{
-				
+				bool* value = (bool*)member_ptr;
+				printf("%s: %i \n", this_member_definition->name, *value);	
 			}break;
 			
 			case PrimitiveType_string_t:
@@ -198,3 +217,8 @@ print_struct(char *struct_name, const type_definition **type_table, u32 type_tab
 	printf("} \n");
 	
 }
+
+/** Print a generic struct with the mayorana reflection system. */
+#define MY_PRINT_STRUCT(debug_name, struct_name, ptr) \
+print_struct(debug_name, all_type_definitions, ArrayCount(all_type_definitions), &GLUE(definition_of_, struct_name), ptr);
+
