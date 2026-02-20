@@ -48,10 +48,12 @@ struct meta_node
 	meta_node* next;
 	meta_node* prev;
 	
+	// Used to determine if this is  a class, struct or enum.
 	u32 flags;
 	
 	// Special for Enums
 	char* size_string;
+	u32 size_string_len;
 };
 
 
@@ -425,13 +427,16 @@ generate_enum_type_definition(tokenizer *_tokenizer, token enum_type_token, meta
 	char default_enum_type_size [3] = "u8";
 	if(!require_token(_tokenizer, Token_Colon))
 	{
-		printf( "Found an enum %s without the type definition : ", enum_type_token.text);		
+		printf("\n");
+		printf( "Found the ENUM: \"%.*s\" without the type definition, adding u8 as default; \n", enum_type_token.text_len, enum_type_token.text);		
 		b_default_enum_size = true;
 		
 		
 		u8 string_size = sizeof(default_enum_type_size);
 		_meta_node->size_string = (char*)malloc(string_size + 1);		
+		_meta_node->size_string_len = string_size;
 		bytes_copy(_meta_node->size_string, default_enum_type_size, string_size + 1);
+		
 		
 		_meta_node->size_string[string_size] = 0;
 	}
@@ -442,13 +447,10 @@ generate_enum_type_definition(tokenizer *_tokenizer, token enum_type_token, meta
 	
 	if(!b_default_enum_size)
 	{
-		_meta_node->size_string = (char*)malloc(enum_size_token.text_len + 1);
-		_meta_node->size_string[0] = 0;		
-		bytes_copy(_meta_node->size_string, default_enum_type_size, enum_size_token.text_len + 1);
-		
-		_meta_node->size_string[enum_size_token.text_len] = 0;
+		_meta_node->size_string = enum_size_token.text;
+		_meta_node->size_string_len = enum_size_token.text_len;
 	}
-		
+	
 	
 	
 	bool parsing = true;
@@ -466,7 +468,7 @@ generate_enum_type_definition(tokenizer *_tokenizer, token enum_type_token, meta
 			
 			// getting the token type token in here.
 			u32 member_flags = 0;
-						
+			
 			// TODO: add member metadata.
 			//	parse_member_params(_tokenizer, &member_flags);								
 			switch(this_token.type)
@@ -792,7 +794,7 @@ generate_type_definition_for(char *name, int idx)
 	printf("{ \n");
 	printf("\"%s\", \n", name);
 	printf("sizeof(%s), \n", name);
-//	printf("%d, \n", idx);
+	//	printf("%d, \n", idx);
 	printf("0, \n");
 	printf("0 \n");
 	printf("};\n");
@@ -853,12 +855,12 @@ generate_meta_enum_for_reflected()
 	{
 		return;
 	}
-		
+	
 	printf("\n");
 	printf("enum meta_type : u32 \n");
 	printf("{\n");
 	printf("MetaType_none, \n");	
-		
+	
 	generate_basic_types_meta();
 	
 	// going back in he list to the first element to recreate the enum in the correct order
@@ -875,7 +877,7 @@ generate_meta_enum_for_reflected()
 	first_meta_node = first_node;
 	
 	printf("\n");
-		
+	
 	for(meta_node* node_idx = first_node;
 		node_idx; 
 		node_idx = node_idx->next)
@@ -948,7 +950,7 @@ generate_member_definition_for_reflected()
 					   member_idx->name,
 					   member_flags_string[0] != 0 ? member_flags_string : "0");
 			}
-
+			
 		}
 		
 		printf("};\n");
@@ -976,7 +978,19 @@ generate_type_definition_for_reflected()
 		// the meta_type with the idx 0 is the MetaType_none, so we start at 1.
 		u32 current_meta_idx = (++meta_idx_counter + ArrayCount(basic_meta_types));
 		//		printf("%d, \n", current_meta_idx);
-		printf("sizeof(%s), \n", idx->size_string ? idx->size_string : idx->name);
+		
+		if(idx->size_string)
+		{
+			printf("sizeof(%.*s), \n", idx->size_string_len, idx->size_string);			
+		}
+		else			
+		{			
+			printf("sizeof(%s), \n", idx->name);
+		}
+		
+		// TODO: Flags for determine if the calss is a struct, class, or enum.
+		// Flags...
+		
 		printf("members_of_%s, \n", idx->name);
 		printf("ArrayCount(members_of_%s) \n", idx->name);				
 		
@@ -1018,3 +1032,57 @@ generate_type_definition_table()
 	printf("};\n");
 }
 
+
+internal_f u32 
+gather_metadata_for_reflected(char *file)
+{
+	// In this step we get the relevant data from the code, so we can create a node list to later on create the generated data to a file for reflection.
+	
+	SCRATCH();
+	
+	buffer_t file_buffer = read_file_and_add_null_at_end(temp_arena, file);
+	tokenizer this_tokenizer = {};
+	this_tokenizer.at = (char*)file_buffer.data;
+	
+	if(file_buffer.size == 0)
+	{
+		printf("Failed to load the file \n");
+		return 1;
+	}
+	
+	bool parsing = true;
+	while(parsing)
+	{
+		token this_token = get_token(&this_tokenizer);
+		switch(this_token.type)
+		{
+			case Token_EndOfStream:
+			{
+				parsing = false;
+				
+			}break;
+			
+			case Token_Unknown:
+			{
+				// not printing for now.
+			}break;
+			
+			case Token_Identifier:
+			{
+				if(token_is_reflected(this_token))
+				{
+					parse_reflected(&this_tokenizer);
+				}
+			}break;
+			
+			default:
+			{
+				//				printf("%d: %.*s\n", this_token.type, this_token.text_len, this_token.text);
+				
+			}break;
+		}	
+	}
+	
+	
+	return 0;
+}

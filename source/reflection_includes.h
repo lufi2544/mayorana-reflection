@@ -61,6 +61,9 @@ struct type_definition
 	
 	const member_definition *members;
 	u32 member_count;
+	
+	// TODO: Add the flags here for determine if this is a struct, class or enum.
+	// u32 flags;
 };
 
 enum member_flag : u32
@@ -71,6 +74,14 @@ enum member_flag : u32
 	MemberFlag_IsEnumField = 1 << 2,
 		
 	MemberFlag_Num,
+};
+
+enum type_flag
+{	
+	TypeFlag_IsPrimitive = 1 << 0,
+	TypeFlag_IsStruct = 1 << 1,
+	TypeFlag_IsClass = 1 << 2,
+	TypeFlag_IsEnum = 1 << 3
 };
 
 
