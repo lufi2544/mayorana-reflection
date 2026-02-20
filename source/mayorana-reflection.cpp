@@ -13,14 +13,6 @@
 print_struct(debug_name, all_type_definitions, ArrayCount(all_type_definitions), &GLUE(definition_of_, struct_name), ptr);
 
 
-enum class test_enum : u32
-{
-TestFlag_None	,
-TestFlag_None1	,
-TestFlag_None2	,
-TestFlag_None3	,
-};
-
 int main(int arg_num, char** args)
 {
 	mayorana_init();
@@ -34,10 +26,8 @@ int main(int arg_num, char** args)
 	printf("PEPE %s \n", enum_value);
 	
 	string_t name = STRING_V(temp_arena, "ishak");
-	u32 player_id = 32;
-	
-	game_data game = { &name, player_id };
-	
+	u32 player_id = 32;	
+	game_data game = { &name, player_id };	
 	game.m_enemy_type = EnemyType_dragon;
 	
 	MY_PRINT_STRUCT("main_game_data", game_data, &game);
@@ -45,6 +35,7 @@ int main(int arg_num, char** args)
 	
 	
 	// Generates internal data for reflected classes.
+	gather_metadata_for_reflected("mayorana.h");	
 	gather_metadata_for_reflected("game.h");	
 
 	// Once the data is gathered, we generate it here in the correct oreder.

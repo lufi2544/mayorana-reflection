@@ -34,6 +34,7 @@ struct member_node
 {
 	char* type;
 	char* name;
+	u32 name_len;
 	u32 flags;
 	
 	member_node *next;
@@ -65,7 +66,7 @@ u32 meta_idx_counter = 0;
 struct flag_name
 {
 	u32 flag;
-	const char *name;
+	char *name;
 };
 
 global const flag_name MemberFlagNames[] =
@@ -74,6 +75,15 @@ global const flag_name MemberFlagNames[] =
 	{ MemberFlag_IsEnum, "MemberFlag_IsEnum" },
 	{ MemberFlag_IsEnumField, "MemberFlag_IsEnumField" },
 };
+
+global flag_name TypeFlagNames[] = 
+{
+	
+	{TypeFlag_IsEnum, "TypeFlag_IsEnum"},
+	{TypeFlag_IsStruct, "TypeFlag_IsStruct"},
+	{TypeFlag_IsClass, "TypeFlag_IsClass"},
+};
+
 
 enum enum_token_type
 {
@@ -315,6 +325,27 @@ get_member_flags_string(u32 flags, char *buffer)
 	}
 }
 
+internal_f void
+get_type_flags_string(u32 flags, char* buffer)
+{
+	buffer[0] = 0;
+	char *at = buffer;
+	
+	for(int i = 0;
+		i < ArrayCount(TypeFlagNames);
+		++i)
+	{
+		if(flags & TypeFlagNames[i].flag)
+		{
+			if(at != buffer)
+			{
+				strcat(at, " || ");
+			}
+			
+			strcat(at, TypeFlagNames[i].name);
+		}
+	}	
+}
 
 internal_f bool
 member_has_flag(member_node *node, member_flag flag)
@@ -537,6 +568,8 @@ parse_enum(tokenizer *this_tokenizer)
 	memcpy(new_meta_node->name, enum_type_token.text, enum_type_token.text_len);
 	new_meta_node->name[enum_type_token.text_len] = 0;
 	
+	new_meta_node->flags |= TypeFlag_IsEnum;
+	
 	if(!current_meta_node)
 	{
 		current_meta_node = new_meta_node;
@@ -570,6 +603,8 @@ parse_struct(tokenizer *_tokenizer)
 	new_meta_node->name[0] = 0;
 	memcpy(new_meta_node->name, struct_type_token.text, struct_type_token.text_len);
 	new_meta_node->name[struct_type_token.text_len] = 0;
+	
+	new_meta_node->flags |= TypeFlag_IsStruct;
 	
 	if(!current_meta_node)
 	{
@@ -796,7 +831,8 @@ generate_type_definition_for(char *name, int idx)
 	printf("sizeof(%s), \n", name);
 	//	printf("%d, \n", idx);
 	printf("0, \n");
-	printf("0 \n");
+	printf("0, \n");
+	printf("TypeFlag_IsPrimitive \n");
 	printf("};\n");
 	printf("\n");
 }
@@ -885,6 +921,7 @@ generate_meta_enum_for_reflected()
 		printf("MetaType_%s, \n", node_idx->name);
 	}
 	
+	printf("\n");
 	printf("MetaType_num \n");
 	printf("}; \n");
 	printf("\n");
@@ -979,12 +1016,14 @@ generate_type_definition_for_reflected()
 		u32 current_meta_idx = (++meta_idx_counter + ArrayCount(basic_meta_types));
 		//		printf("%d, \n", current_meta_idx);
 		
-		if(idx->size_string)
+		if(idx->flags & TypeFlag_IsEnum)
 		{
-			printf("sizeof(%.*s), \n", idx->size_string_len, idx->size_string);			
+			// Set for enums
+			printf("sizeof(%.*s), \n", idx->size_string_len, idx->size_string);
 		}
-		else			
-		{			
+		else
+		{
+			// set for struct or classes
 			printf("sizeof(%s), \n", idx->name);
 		}
 		
@@ -992,7 +1031,11 @@ generate_type_definition_for_reflected()
 		// Flags...
 		
 		printf("members_of_%s, \n", idx->name);
-		printf("ArrayCount(members_of_%s) \n", idx->name);				
+		printf("ArrayCount(members_of_%s), \n", idx->name);
+		
+		char flags_string[256];
+		get_type_flags_string(idx->flags, flags_string);
+		printf("%s \n" ,flags_string);
 		
 		printf("}; \n");
 		printf("\n");

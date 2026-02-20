@@ -9,7 +9,10 @@ enum enemy_type : u32
 	EnemyType_none,
 	EnemyType_trol,
 	EnemyType_dragon,
-	EnemyType_soldier,	
+	EnemyType_soldier,
+	EnemyType_boss,
+	EnemyType_miniboss,
+	
 };
 
 
@@ -23,10 +26,9 @@ struct game_data
 	MY_PROPERTY()
 		u32 player_id;
 	
-	MY_PROPERTY(enum)
+	MY_PROPERTY()
 		enemy_type m_enemy_type;
 };
-
 
 
 
@@ -49,6 +51,7 @@ enum meta_type : u32
 	MetaType_string_t, 
 	MetaType_enemy_type, 
 	MetaType_game_data, 
+	
 	MetaType_num 
 }; 
 
@@ -57,7 +60,8 @@ const type_definition definition_of_u8 =
 	"u8", 
 	sizeof(u8), 
 	0, 
-	0 
+	0, 
+	TypeFlag_IsPrimitive 
 };
 
 const type_definition definition_of_u16 = 
@@ -65,7 +69,8 @@ const type_definition definition_of_u16 =
 	"u16", 
 	sizeof(u16), 
 	0, 
-	0 
+	0, 
+	TypeFlag_IsPrimitive 
 };
 
 const type_definition definition_of_u32 = 
@@ -73,7 +78,8 @@ const type_definition definition_of_u32 =
 	"u32", 
 	sizeof(u32), 
 	0, 
-	0 
+	0, 
+	TypeFlag_IsPrimitive 
 };
 
 const type_definition definition_of_u64 = 
@@ -81,7 +87,8 @@ const type_definition definition_of_u64 =
 	"u64", 
 	sizeof(u64), 
 	0, 
-	0 
+	0, 
+	TypeFlag_IsPrimitive 
 };
 
 const type_definition definition_of_s8 = 
@@ -89,7 +96,8 @@ const type_definition definition_of_s8 =
 	"s8", 
 	sizeof(s8), 
 	0, 
-	0 
+	0, 
+	TypeFlag_IsPrimitive 
 };
 
 const type_definition definition_of_s16 = 
@@ -97,7 +105,8 @@ const type_definition definition_of_s16 =
 	"s16", 
 	sizeof(s16), 
 	0, 
-	0 
+	0, 
+	TypeFlag_IsPrimitive 
 };
 
 const type_definition definition_of_s32 = 
@@ -105,7 +114,8 @@ const type_definition definition_of_s32 =
 	"s32", 
 	sizeof(s32), 
 	0, 
-	0 
+	0, 
+	TypeFlag_IsPrimitive 
 };
 
 const type_definition definition_of_s64 = 
@@ -113,7 +123,8 @@ const type_definition definition_of_s64 =
 	"s64", 
 	sizeof(s64), 
 	0, 
-	0 
+	0, 
+	TypeFlag_IsPrimitive 
 };
 
 const type_definition definition_of_f32 = 
@@ -121,7 +132,8 @@ const type_definition definition_of_f32 =
 	"f32", 
 	sizeof(f32), 
 	0, 
-	0 
+	0, 
+	TypeFlag_IsPrimitive 
 };
 
 const type_definition definition_of_f64 = 
@@ -129,7 +141,8 @@ const type_definition definition_of_f64 =
 	"f64", 
 	sizeof(f64), 
 	0, 
-	0 
+	0, 
+	TypeFlag_IsPrimitive 
 };
 
 const type_definition definition_of_bool = 
@@ -137,21 +150,21 @@ const type_definition definition_of_bool =
 	"bool", 
 	sizeof(bool), 
 	0, 
-	0 
+	0, 
+	TypeFlag_IsPrimitive 
 };
 
 const member_definition members_of_buffer_t[] = 
 {
-	{"size", MetaType_u64, OFFSET_OF(buffer_t, size), 0}, 
 	{"data", MetaType_u8, OFFSET_OF(buffer_t, data), MemberFlag_IsPointer}, 
+	{"size", MetaType_u64, OFFSET_OF(buffer_t, size), 0}, 
 };
 
 const member_definition members_of_string_t[] = 
 {
-	{"size", MetaType_u32, OFFSET_OF(string_t, size), 0}, 
 	{"buffer", MetaType_buffer_t, OFFSET_OF(string_t, buffer), 0}, 
+	{"size", MetaType_u32, OFFSET_OF(string_t, size), 0}, 
 };
-
 
 const member_definition members_of_enemy_type[] = 
 {
@@ -159,39 +172,42 @@ const member_definition members_of_enemy_type[] =
 	{"EnemyType_trol", MetaType_u32, 1, MemberFlag_IsEnumField}, 
 	{"EnemyType_dragon", MetaType_u32, 2, MemberFlag_IsEnumField}, 
 	{"EnemyType_soldier", MetaType_u32, 3, MemberFlag_IsEnumField}, 
+	{"EnemyType_boss", MetaType_u32, 4, MemberFlag_IsEnumField}, 
+	{"EnemyType_miniboss", MetaType_u32, 5, MemberFlag_IsEnumField}, 
 };
 
 const member_definition members_of_game_data[] = 
 {
 	{"player_name", MetaType_string_t, OFFSET_OF(game_data, player_name), MemberFlag_IsPointer}, 
 	{"player_id", MetaType_u32, OFFSET_OF(game_data, player_id), 0}, 
-	{"m_enemy_type", MetaType_enemy_type, OFFSET_OF(game_data, m_enemy_type), MemberFlag_IsEnum}, 
+	{"m_enemy_type", MetaType_enemy_type, OFFSET_OF(game_data, m_enemy_type), 0}, 
 };
-
 
 const type_definition definition_of_buffer_t 
 { 
 	"buffer_t",
 	sizeof(buffer_t), 
 	members_of_buffer_t, 
-	ArrayCount(members_of_buffer_t) 
-};
+	ArrayCount(members_of_buffer_t), 
+	TypeFlag_IsStruct 
+}; 
 
 const type_definition definition_of_string_t 
 { 
 	"string_t",
 	sizeof(string_t), 
 	members_of_string_t, 
-	ArrayCount(members_of_string_t) 
-};
-
+	ArrayCount(members_of_string_t), 
+	TypeFlag_IsStruct 
+}; 
 
 const type_definition definition_of_enemy_type 
 { 
 	"enemy_type",
-	sizeof(u8), 
+	sizeof(u32), 
 	members_of_enemy_type, 
-	ArrayCount(members_of_enemy_type) 
+	ArrayCount(members_of_enemy_type), 
+	TypeFlag_IsEnum 
 }; 
 
 const type_definition definition_of_game_data 
@@ -199,8 +215,10 @@ const type_definition definition_of_game_data
 	"game_data",
 	sizeof(game_data), 
 	members_of_game_data, 
-	ArrayCount(members_of_game_data) 
+	ArrayCount(members_of_game_data), 
+	TypeFlag_IsStruct 
 }; 
+
 
 const type_definition* all_type_definitions[] = 
 {

@@ -62,8 +62,7 @@ struct type_definition
 	const member_definition *members;
 	u32 member_count;
 	
-	// TODO: Add the flags here for determine if this is a struct, class or enum.
-	// u32 flags;
+	u32 flags;
 };
 
 enum member_flag : u32
@@ -107,16 +106,9 @@ print_enum_value(char *member_name, u32 member_value, const type_definition *enu
 		return;
 	}
 	
-	for(u32 member_idx = 0;
-		member_idx < enum_definition->member_count;
-		++member_idx)		
-	{
-		if(member_idx == member_value)
-		{						
-			const member_definition *this_member_definition = enum_definition->members + member_idx;
-			printf("%s : %s", member_name, this_member_definition->name);			
-		}				
-	}				
+	
+	const member_definition *this_member_definition = enum_definition->members + member_value;
+	printf("%s : %s", member_name, this_member_definition->name);			
 	
 	printf("} \n");
 }
@@ -169,7 +161,7 @@ print_struct(char *struct_name, const type_definition **type_table, u32 type_tab
 		u8* struct_address = (u8*)struct_ptr;
 		u8* member_ptr = struct_address + this_member_definition->offset;
 		
-		if(this_member_definition->flags & MemberFlag_IsEnum)
+		if(this_member_type->flags & TypeFlag_IsEnum)
 		{
 			// TODO: Maybe encoding the size somewhere so we can cast to the proper size here.
 			u32* enum_field_value = (u32*)member_ptr;
