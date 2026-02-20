@@ -11,41 +11,6 @@
 #define MY_PROPERTY(...)
 
 
-/**
- * ****IMPORTANT ****
- * 
- * As this reflection library is inteded to use among my projects, I don't want to specify in every of them
- * the way of printing and handling this base primitives from "mayorana.h", and in this case the intention is
- * to include this header and don't worrying about how the string_t or other "mayorana.h" is handled, we need to figure
- * out a way so at this lib's compile time, we know the metatype of what we intend to print, and to handle it.
- * 
- * My solution for this is to generate a MetaType_ enum in the reflection in the same order than this one here, so we don't break the 
- * enumeration in the types. As this is my personal projects reflection system is fine.CONS: whenever I add a reflected struct from "mayorana.h"
- * I need to be careful in the order.
-*/
-enum primitive_meta_type : u32
-{
-	PrimitiveType_None,
-	PrimitiveType_u8,
-	PrimitiveType_u16,
-	PrimitiveType_u32,
-	PrimitiveType_u64,
-	PrimitiveType_s8,
-	PrimitiveType_s16,
-	PrimitiveType_s32,
-	PrimitiveType_s64,
-	PrimitiveType_f32,
-	PrimitiveType_f64,
-	PrimitiveType_bool,
-	
-	
-	PrimitiveType_buffer_t,		
-	PrimitiveType_string_t,	
-	// Add as many as Mayorana supports from mayoran.h
-};
-
-
-
 struct member_definition
 {
 	char* name;
@@ -53,6 +18,8 @@ struct member_definition
 	u32 offset;
 	u32 flags;
 };
+
+typedef void (*printer_fn)(char*, void*);
 
 struct type_definition
 {
@@ -62,7 +29,8 @@ struct type_definition
 	const member_definition *members;
 	u32 member_count;
 	
-	u32 flags;
+	u32 flags;	
+	printer_fn printer;
 };
 
 enum member_flag : u32
@@ -75,12 +43,13 @@ enum member_flag : u32
 	MemberFlag_Num,
 };
 
-enum type_flag
+enum type_flag : u32
 {	
 	TypeFlag_IsPrimitive = 1 << 0,
 	TypeFlag_IsStruct = 1 << 1,
 	TypeFlag_IsClass = 1 << 2,
-	TypeFlag_IsEnum = 1 << 3
+	TypeFlag_IsEnum = 1 << 3,
+	TypeFlag_HasCustomPrinter = 1 << 4,
 };
 
 
@@ -101,7 +70,7 @@ get_type_definition(const type_definition** types_definition_table, u32 table_si
 global_f void
 print_enum_value(char *member_name, u32 member_value, const type_definition *enum_definition)
 {	
-	if(member_value > enum_definition->member_count)
+	if(member_value >= enum_definition->member_count)
 	{
 		return;
 	}
@@ -178,87 +147,14 @@ print_struct(char *struct_name, const type_definition **type_table, u32 type_tab
 			member_ptr = real_ptr;
 		}
 		
-		primitive_meta_type this_meta_type = (primitive_meta_type)this_member_definition->meta_type;
-		switch(this_meta_type)
-		{							
-			// TODO: Make sure if any reflected native type is added, we inticate that.
-			case PrimitiveType_u8:
-			{
-				printf("%s: %u \n", this_member_definition->name, *member_ptr);
-			}break;
-			
-			case PrimitiveType_u16:
-			{
-				u16* value = (u16*)member_ptr;
-				printf("%s: %u \n", this_member_definition->name, *value);
-			}break;
-			
-			case PrimitiveType_u32:
-			{
-				u32* value = (u32*)member_ptr;
-				printf("%s: %u \n", this_member_definition->name, *value);
-			}break;
-			
-			case PrimitiveType_u64:
-			{
-				u64* value = (u64*)member_ptr;
-				printf("%s: %llu \n", this_member_definition->name, *value);	
-			}break;
-			
-			case PrimitiveType_s8:
-			{				
-				s8* value = (s8*)member_ptr;
-				printf("%s: %d \n", this_member_definition->name, *value);	
-			}break;
-			
-			case PrimitiveType_s16:
-			{
-				s16* value = (s16*)member_ptr;
-				printf("%s: %d \n", this_member_definition->name, *value);	
-			}break;
-			
-			case PrimitiveType_s32:
-			{
-				s32* value = (s32*)member_ptr;
-				printf("%s: %d \n", this_member_definition->name, *value);	
-			}break;
-			
-			case PrimitiveType_s64:
-			{
-				s64* value = (s64*)member_ptr;
-				printf("%s: %llu \n", this_member_definition->name, *value);	
-			}break;
-			
-			case PrimitiveType_f32:
-			{
-				f32* value = (f32*)member_ptr;
-				printf("%s: %f \n", this_member_definition->name, *value);	
-			}break;
-			
-			case PrimitiveType_f64:
-			{
-				f64* value = (f64*)member_ptr;
-				printf("%s: %f \n", this_member_definition->name, *value);	
-			}break;
-			
-			case PrimitiveType_bool:
-			{
-				bool* value = (bool*)member_ptr;
-				printf("%s: %i \n", this_member_definition->name, *value);	
-			}break;
-			
-			case PrimitiveType_string_t:
-			{
-				string_t *value = (string_t*)member_ptr;
-				printf("%s: %s \n", this_member_definition->name, *(*value));
-				
-			}break;						
-			
-			
-			default:
-			{			
-				print_struct(0, type_table, type_table_size, this_member_type, member_ptr);
-			}break;
+		// All the primitive functions must have the printers, if we dont have a printer for this struct, we will print its members in stead.
+		if(this_member_type->printer)
+		{
+			this_member_type->printer(this_member_definition->name, member_ptr);
+		}
+		else
+		{
+			print_struct(0, type_table, type_table_size, this_member_type, member_ptr);
 		}
 	}				
 	

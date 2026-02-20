@@ -91,6 +91,7 @@ enum enum_token_type
 	
 	Token_OpenParen,
 	Token_Coma,
+	Token_Point,
 	Token_Colon,
 	Token_CloseParen,
 	Token_Semicolon,
@@ -130,60 +131,6 @@ is_white_space(char c)
 	return result;
 }
 
-/** TODO: This needs to be in the project itself.
-
-global_f void
-print_struct(u32 _member_count, member_definition *_struct_definition, void *struct_ptr)
-{
-	for(u32 member_idx = 0;
-		member_idx < _member_count;
-		++member_idx)
-	{
-		member_definition *member = _struct_definition + member_idx;
-		char text_buffer[256];
-		text_buffer[0] = 0;
-		swtich(member->type)
-		{
-			case Metatype_u32:
-			{
-				
-			}break;
-			
-			case MetaType_bool:
-			{
-				
-			}break;
-			
-			case MetaType_bool:
-			{
-				
-			}break;
-			case MetaType_bool:
-			{
-				
-			}break;
-			case MetaType_bool:
-			{
-				
-			}break;
-			case MetaType_bool:
-			{
-				
-			}break;
-			case MetaType_bool:
-			{
-				
-			}break;
-			case MetaType_bool:
-			{
-				
-			}break;
-		}
-	}
-} 
-
-*/
-
 // In this case the match has the \0 operator at the end, but not the _token->text data, since it is a buffer with a lenght based on a bigger text buffer.
 global_f bool
 token_equals(token _token, char *match)
@@ -205,15 +152,8 @@ token_equals(token _token, char *match)
 }
 
 
-internal_f bool
-token_is_reflected(token _token)
-{
-	bool result = token_equals(_token, "MY_CLASS")
-		|| token_equals(_token, "MY_STRUCT")
-		|| token_equals(_token, "MY_ENUM");
-	
-	return result;
-}
+global_f token
+get_token(tokenizer *_tokenizer);  
 
 internal_f bool 
 token_is_property_reflected(token _token)
@@ -223,8 +163,15 @@ token_is_property_reflected(token _token)
 }
 
 
-global_f token
-get_token(tokenizer *_tokenizer);
+internal_f bool
+token_is_reflected(token _token, tokenizer *_tokenizer)
+{
+	bool result = token_equals(_token, "MY_CLASS")
+		|| token_equals(_token, "MY_STRUCT")
+		|| token_equals(_token, "MY_ENUM");
+	
+	return result;
+}
 
 internal_f bool
 require_token(tokenizer *_tokenizer, enum_token_type _type)
@@ -237,7 +184,7 @@ require_token(tokenizer *_tokenizer, enum_token_type _type)
 
 
 internal_f void
-parse_reflection_params(tokenizer *_tokenizer)
+parse_reflection_params(tokenizer *_tokenizer, u32 *flags)
 {
 	for(;;)
 	{
@@ -247,6 +194,13 @@ parse_reflection_params(tokenizer *_tokenizer)
 		   || (this_token.type == Token_EndOfStream))
 		{
 			break;
+		}
+		else if(this_token.type == Token_Identifier)
+		{
+			if(token_equals(this_token, "CustomPrinter"))
+			{
+				(*flags) |= TypeFlag_HasCustomPrinter;
+			}
 		}
 	}
 }
@@ -588,14 +542,14 @@ parse_enum(tokenizer *this_tokenizer)
 
 // TODO: in the future we will set this to be serializable only the MY_PROPERTY() fields
 internal_f void
-parse_struct(tokenizer *_tokenizer)
+parse_struct(tokenizer *_tokenizer, u32 type_flags)
 {
 	token struct_type_token = get_token(_tokenizer);
 	
 	
 	// Meta type enum generation
 	meta_node* new_meta_node = new meta_node();
-	new_meta_node->flags = 0;
+	new_meta_node->flags = type_flags;
 	new_meta_node->size_string = 0;
 	new_meta_node->next = 0;
 	new_meta_node->prev = current_meta_node;
@@ -630,16 +584,19 @@ parse_struct(tokenizer *_tokenizer)
 */
 global_f void
 parse_reflected(tokenizer *_tokenizer)
+
 {
-	if(require_token(_tokenizer, Token_OpenParen))
+	if(require_token(_tokenizer, Token_OpenParen) &&
+	   !require_token(_tokenizer, Token_Point)) 	// Check if we are trying to parse the definition of the void Macros for reflection MY_STRUCT(...), MY_CLASS(...), MY_ENUM(...)
 	{
-		parse_reflection_params(_tokenizer);
+		u32 flags = 0;
+		parse_reflection_params(_tokenizer, &flags);
 		
 		token type_token = get_token(_tokenizer);
 		
 		if(token_equals(type_token, "struct"))
 		{
-			parse_struct(_tokenizer);
+			parse_struct(_tokenizer, flags);
 			
 		}
 		else if(token_equals(type_token, "enum"))
@@ -648,14 +605,11 @@ parse_reflected(tokenizer *_tokenizer)
 		}
 		else
 		{			
-			fprintf(stderr, "ERROR: Reflection is only supported for struct.");
+			fprintf(stderr, "ERROR: Reflection is only supported for struct \n.");
 		}
 		
 	}
-	else
-	{
-		fprintf(stderr, "ERROR: Missing parenthesis after the reflection identifier.");
-	}
+
 }
 
 inline bool
@@ -771,6 +725,7 @@ get_token(tokenizer *_tokenizer)
 		case ':':{ result.type = Token_Colon; }break;
 		case ';':{ result.type = Token_Semicolon; }break;
 		case ',':{ result.type = Token_Coma; }break;
+		case '.':{ result.type = Token_Point; }break;
 		
 		
 		case '"':
@@ -832,7 +787,8 @@ generate_type_definition_for(char *name, int idx)
 	//	printf("%d, \n", idx);
 	printf("0, \n");
 	printf("0, \n");
-	printf("TypeFlag_IsPrimitive \n");
+	printf("TypeFlag_IsPrimitive, \n");
+	printf("printer_%s \n", name);
 	printf("};\n");
 	printf("\n");
 }
@@ -1035,7 +991,16 @@ generate_type_definition_for_reflected()
 		
 		char flags_string[256];
 		get_type_flags_string(idx->flags, flags_string);
-		printf("%s \n" ,flags_string);
+		printf("%s, \n" ,flags_string);
+		
+		if(idx->flags & TypeFlag_HasCustomPrinter)
+		{
+			printf("printer_%s \n", idx->name);			
+		}
+		else
+		{
+			printf("0 \n");
+		}
 		
 		printf("}; \n");
 		printf("\n");
@@ -1112,7 +1077,7 @@ gather_metadata_for_reflected(char *file)
 			
 			case Token_Identifier:
 			{
-				if(token_is_reflected(this_token))
+				if(token_is_reflected(this_token, &this_tokenizer) )
 				{
 					parse_reflected(&this_tokenizer);
 				}

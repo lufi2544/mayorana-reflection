@@ -30,8 +30,6 @@ struct game_data
 		enemy_type m_enemy_type;
 };
 
-
-
 enum meta_type : u32 
 {
 	MetaType_none, 
@@ -61,7 +59,8 @@ const type_definition definition_of_u8 =
 	sizeof(u8), 
 	0, 
 	0, 
-	TypeFlag_IsPrimitive 
+	TypeFlag_IsPrimitive, 
+	printer_u8 
 };
 
 const type_definition definition_of_u16 = 
@@ -70,7 +69,8 @@ const type_definition definition_of_u16 =
 	sizeof(u16), 
 	0, 
 	0, 
-	TypeFlag_IsPrimitive 
+	TypeFlag_IsPrimitive, 
+	printer_u16 
 };
 
 const type_definition definition_of_u32 = 
@@ -79,7 +79,8 @@ const type_definition definition_of_u32 =
 	sizeof(u32), 
 	0, 
 	0, 
-	TypeFlag_IsPrimitive 
+	TypeFlag_IsPrimitive, 
+	printer_u32 
 };
 
 const type_definition definition_of_u64 = 
@@ -88,7 +89,8 @@ const type_definition definition_of_u64 =
 	sizeof(u64), 
 	0, 
 	0, 
-	TypeFlag_IsPrimitive 
+	TypeFlag_IsPrimitive, 
+	printer_u64 
 };
 
 const type_definition definition_of_s8 = 
@@ -97,7 +99,8 @@ const type_definition definition_of_s8 =
 	sizeof(s8), 
 	0, 
 	0, 
-	TypeFlag_IsPrimitive 
+	TypeFlag_IsPrimitive, 
+	printer_s8 
 };
 
 const type_definition definition_of_s16 = 
@@ -106,7 +109,8 @@ const type_definition definition_of_s16 =
 	sizeof(s16), 
 	0, 
 	0, 
-	TypeFlag_IsPrimitive 
+	TypeFlag_IsPrimitive, 
+	printer_s16 
 };
 
 const type_definition definition_of_s32 = 
@@ -115,7 +119,8 @@ const type_definition definition_of_s32 =
 	sizeof(s32), 
 	0, 
 	0, 
-	TypeFlag_IsPrimitive 
+	TypeFlag_IsPrimitive, 
+	printer_s32 
 };
 
 const type_definition definition_of_s64 = 
@@ -124,7 +129,8 @@ const type_definition definition_of_s64 =
 	sizeof(s64), 
 	0, 
 	0, 
-	TypeFlag_IsPrimitive 
+	TypeFlag_IsPrimitive, 
+	printer_s64 
 };
 
 const type_definition definition_of_f32 = 
@@ -133,7 +139,8 @@ const type_definition definition_of_f32 =
 	sizeof(f32), 
 	0, 
 	0, 
-	TypeFlag_IsPrimitive 
+	TypeFlag_IsPrimitive, 
+	printer_f32 
 };
 
 const type_definition definition_of_f64 = 
@@ -142,7 +149,8 @@ const type_definition definition_of_f64 =
 	sizeof(f64), 
 	0, 
 	0, 
-	TypeFlag_IsPrimitive 
+	TypeFlag_IsPrimitive, 
+	printer_f64 
 };
 
 const type_definition definition_of_bool = 
@@ -151,7 +159,8 @@ const type_definition definition_of_bool =
 	sizeof(bool), 
 	0, 
 	0, 
-	TypeFlag_IsPrimitive 
+	TypeFlag_IsPrimitive, 
+	printer_bool 
 };
 
 const member_definition members_of_buffer_t[] = 
@@ -189,7 +198,8 @@ const type_definition definition_of_buffer_t
 	sizeof(buffer_t), 
 	members_of_buffer_t, 
 	ArrayCount(members_of_buffer_t), 
-	TypeFlag_IsStruct 
+	TypeFlag_IsStruct, 
+	printer_buffer_t 
 }; 
 
 const type_definition definition_of_string_t 
@@ -198,7 +208,8 @@ const type_definition definition_of_string_t
 	sizeof(string_t), 
 	members_of_string_t, 
 	ArrayCount(members_of_string_t), 
-	TypeFlag_IsStruct 
+	TypeFlag_IsStruct, 
+	printer_string_t 
 }; 
 
 const type_definition definition_of_enemy_type 
@@ -207,7 +218,8 @@ const type_definition definition_of_enemy_type
 	sizeof(u32), 
 	members_of_enemy_type, 
 	ArrayCount(members_of_enemy_type), 
-	TypeFlag_IsEnum 
+	TypeFlag_IsEnum, 
+	0 
 }; 
 
 const type_definition definition_of_game_data 
@@ -216,7 +228,8 @@ const type_definition definition_of_game_data
 	sizeof(game_data), 
 	members_of_game_data, 
 	ArrayCount(members_of_game_data), 
-	TypeFlag_IsStruct 
+	TypeFlag_IsStruct, 
+	0 
 }; 
 
 
